@@ -1,14 +1,12 @@
 'use client';
 
-import mapboxgl, { MapMouseEvent } from 'mapbox-gl';
 import { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { getWeatherData } from '@/app/actions/weather';
 import { Sidebar } from './sidebar';
-import { cn } from '@/lib/utils';
-import { Spinner } from './ui/spinner';
-import { useToast } from '@/components/ui/use-toast';
-import { WeatherError } from '@/utils/services/weather';
+import { useToast } from './ui/use-toast';
+import { PolygonService } from '@/utils/services/polygon';
+import { ProjectSiteForm, ProjectSiteDetails } from './project-site-form';
 
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
@@ -30,32 +28,44 @@ async function reverseGeocode(lng: number, lat: number) {
   return null;
 }
 
-export default function Map() {
-  const mapContainer = useRef<HTMLDivElement>(null);
+interface MapComponentProps {
+  onProjectSiteCreate?: (coordinates: number[][], details: ProjectSiteDetails) => void;
+}
+
+export default function MapComponent({ onProjectSiteCreate }: MapComponentProps) {
+  const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    lat: number;
-    lng: number;
-    name?: string;
-    weather?: any;
-  } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; name?: string } | null>(null);
+  const [weatherData, setWeatherData] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [currentPolygon, setCurrentPolygon] = useState<number[][] | null>(null);
+  const [projectSites, setProjectSites] = useState<Array<{
+    id: string;
+    name: string;
+    description: string;
+    type: string;
+    coordinates: number[][];
+  }>>([]);
+  const polygonService = useRef<PolygonService | null>(null);
   const { toast } = useToast();
 
-  const handleLocationUpdate = async (location: { lat: number; lng: number; name?: string }) => {
+  const handleLocationUpdate = async (location: { lat: number; lng: number }) => {
     if (!map.current) return;
 
+    // Open sidebar when location is clicked
     setIsSidebarOpen(true);
-    setSelectedLocation(null); // Reset current weather data
+    setSelectedLocation({ ...location }); // Set initial location without name
+    setWeatherData(null); // Clear previous weather data to show loading state
 
-    // Remove existing marker if any
-    const existingMarker = document.querySelector('.mapboxgl-marker');
+    // Remove existing weather marker if any
+    const existingMarker = document.querySelector('.weather-marker');
     existingMarker?.remove();
 
     // Create custom marker element
     const markerEl = document.createElement('div');
-    markerEl.className = 'flex items-center justify-center';
+    markerEl.className = 'weather-marker flex items-center justify-center';
     markerEl.innerHTML = `
       <div class="relative">
         <div class="absolute -inset-3 animate-ping rounded-full bg-secondary/50 opacity-75"></div>
@@ -79,92 +89,323 @@ export default function Map() {
     });
 
     try {
-      const [weatherData, locationName] = await Promise.all([
-        getWeatherData(location.lat, location.lng),
-        location.name ? Promise.resolve(location.name) : reverseGeocode(location.lng, location.lat)
+      const [weatherResponse, locationName] = await Promise.all([
+        fetch('/api/weather', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: location.lat, lng: location.lng }),
+        }),
+        reverseGeocode(location.lng, location.lat)
       ]);
-      
-      setSelectedLocation({ 
-        ...location, 
-        weather: weatherData,
-        name: locationName || undefined
-      });
+
+      if (!weatherResponse.ok) {
+        throw new Error('Failed to fetch weather data');
+      }
+
+      const weatherData = await weatherResponse.json();
+      setWeatherData(weatherData);
+      setSelectedLocation({ ...location, name: locationName || undefined });
     } catch (error) {
       console.error('Error fetching data:', error);
-      if (error instanceof WeatherError && error.code === 'LOCATION_OUTSIDE_US') {
-        toast({
-          title: "Location Outside US",
-          description: "NOAA only provides weather data for locations within the United States. Try clicking somewhere within the US borders.",
-          variant: "destructive",
-          duration: 5000,
-        });
-      } else {
-        toast({
-          title: "Location Outside US",
-          description: "NOAA only provides weather data for locations within the United States. Try clicking somewhere within the US borders.",
-          variant: "destructive",
-          duration: 5000,
-        });
-      }
-      setSelectedLocation(null);
-      setIsSidebarOpen(false);
-      existingMarker?.remove();
+      toast({
+        title: "Error fetching weather data",
+        description: "Please try again later",
+        variant: "destructive",
+      });
     }
-  };
-
-  const handleMapClick = (e: MapMouseEvent) => {
-    const { lng, lat } = e.lngLat;
-    handleLocationUpdate({ lng, lat });
   };
 
   useEffect(() => {
-    if (mapContainer.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/satellite-v9',
-        center: [-98.5795, 39.8283], // Center of US
-        zoom: 4,
-        minZoom: 1,
-        maxZoom: 18
+    if (!mapContainer.current) return;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/satellite-v9',
+      center: [-98.5795, 39.8283], // Center of the US
+      zoom: 3
+    });
+
+    // Initialize polygon service but don't add controls yet
+    polygonService.current = new PolygonService();
+
+    // Add source and layer for saved polygons
+    map.current.on('load', () => {
+      map.current?.addSource('saved-polygons', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
       });
 
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-      map.current.on('load', () => {
-        setIsLoading(false);
+      map.current?.addLayer({
+        id: 'saved-polygons-fill',
+        type: 'fill',
+        source: 'saved-polygons',
+        paint: {
+          'fill-color': '#0066FF',
+          'fill-opacity': 0.2
+        }
       });
 
-      map.current.on('click', handleMapClick);
-    }
+      map.current?.addLayer({
+        id: 'saved-polygons-outline',
+        type: 'line',
+        source: 'saved-polygons',
+        paint: {
+          'line-color': '#0066FF',
+          'line-width': 2
+        }
+      });
+    });
 
     return () => {
-      if (map.current) {
-        map.current.remove();
-      }
+      polygonService.current?.cleanup();
+      map.current?.remove();
     };
   }, []);
 
+  // Calculate center of polygon
+  const calculatePolygonCenter = (coordinates: number[][]): [number, number] => {
+    const lngs = coordinates.map(coord => coord[0]);
+    const lats = coordinates.map(coord => coord[1]);
+    const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+    const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+    return [centerLng, centerLat];
+  };
+
+  // Update the map when project sites change
+  useEffect(() => {
+    if (!map.current) return;
+
+    // Wait for the source to be added
+    if (!map.current.getSource('saved-polygons')) {
+      map.current.once('load', updatePolygons);
+      return;
+    }
+
+    updatePolygons();
+
+    function updatePolygons() {
+      // Remove existing project site labels
+      document.querySelectorAll('.project-site-label').forEach(el => {
+        // Only remove if it's a direct label element, not a marker wrapper
+        if (!el.closest('.mapboxgl-marker')) {
+          el.closest('.mapboxgl-marker')?.remove();
+        }
+      });
+
+      // Add labels for each project site
+      projectSites.forEach(site => {
+        const center = calculatePolygonCenter(site.coordinates);
+        
+        // Create label element
+        const labelEl = document.createElement('div');
+        labelEl.className = 'project-site-label bg-background/90 px-2 py-1 rounded-md shadow-md border border-border text-sm font-medium z-10';
+        labelEl.textContent = site.name;
+
+        // Add label to map
+        new mapboxgl.Marker({
+          element: labelEl,
+          anchor: 'center'
+        })
+          .setLngLat(center)
+          .addTo(map.current!);
+      });
+
+      // Update polygons on the map
+      const geojson = {
+        type: 'FeatureCollection',
+        features: projectSites.map(site => ({
+          type: 'Feature',
+          properties: {
+            id: site.id,
+            name: site.name,
+            type: site.type
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [site.coordinates]
+          }
+        }))
+      };
+
+      (map.current?.getSource('saved-polygons') as mapboxgl.GeoJSONSource)?.setData(geojson as any);
+    }
+  }, [projectSites]);
+
+  // Toggle drawing mode and controls
+  useEffect(() => {
+    if (!map.current || !polygonService.current) return;
+
+    if (isDrawingMode) {
+      polygonService.current.initialize(map.current);
+      
+      // Add polygon complete listener
+      const handlePolygonCompleteEvent = (e: CustomEvent<number[][]>) => {
+        handlePolygonComplete(e.detail);
+      };
+
+      // Add instructions listener
+      const handleInstructionsEvent = (e: CustomEvent<string>) => {
+        toast({
+          title: "Drawing Instructions",
+          description: e.detail,
+          duration: 10000, // Show for 10 seconds
+        });
+      };
+      
+      window.addEventListener('polygon.complete', handlePolygonCompleteEvent as EventListener);
+      window.addEventListener('polygon.instructions', handleInstructionsEvent as EventListener);
+      
+      toast({
+        title: "Project Site Creation Mode",
+        description: "Draw a polygon on the map to define your project site",
+        duration: 5000,
+      });
+
+      return () => {
+        window.removeEventListener('polygon.complete', handlePolygonCompleteEvent as EventListener);
+        window.removeEventListener('polygon.instructions', handleInstructionsEvent as EventListener);
+      };
+    } else {
+      polygonService.current.cleanup();
+    }
+  }, [isDrawingMode]);
+
+  // Handle map click for weather data
+  useEffect(() => {
+    if (!map.current) return;
+
+    const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
+      if (isDrawingMode) return; // Don't handle weather clicks in drawing mode
+      const { lat, lng } = e.lngLat;
+      handleLocationUpdate({ lat, lng });
+    };
+
+    map.current.on('click', handleMapClick);
+    return () => {
+      map.current?.off('click', handleMapClick);
+    };
+  }, [isDrawingMode]);
+
+  const handleDrawingModeToggle = () => {
+    if (isDrawingMode) {
+      // If we're turning off drawing mode, clean up
+      polygonService.current?.cleanup();
+      setShowProjectForm(false);
+      setCurrentPolygon(null);
+    } else {
+      // If we're turning on drawing mode, create a new instance
+      polygonService.current = new PolygonService();
+    }
+    setIsDrawingMode(!isDrawingMode);
+  };
+
+  const handlePolygonComplete = (coordinates: number[][]) => {
+    setCurrentPolygon(coordinates);
+    setShowProjectForm(true);
+    setIsSidebarOpen(true);
+    
+    toast({
+      title: "Project Site Area Defined",
+      description: "Please fill in the project details",
+      duration: 5000,
+    });
+  };
+
+  const handleProjectDetailsSubmit = (details: ProjectSiteDetails) => {
+    if (!currentPolygon) return;
+    
+    // Create new project site
+    const newSite = {
+      id: crypto.randomUUID(),
+      name: details.name,
+      description: details.description,
+      type: details.type,
+      coordinates: currentPolygon
+    };
+    
+    // Add to project sites list
+    setProjectSites(prev => [...prev, newSite]);
+    
+    // Reset all states
+    onProjectSiteCreate?.(currentPolygon, details);
+    
+    // Clean up the polygon service
+    polygonService.current?.cleanup();
+    
+    // Create a new instance for next use
+    polygonService.current = new PolygonService();
+    
+    // Reset all states
+    setIsDrawingMode(false);
+    setShowProjectForm(false);
+    setCurrentPolygon(null);
+    
+    // Switch back to the list tab after creation
+    const listTab = document.querySelector('[value="list"]') as HTMLElement;
+    if (listTab) {
+      listTab.click();
+    }
+    
+    toast({
+      title: "Project Site Saved",
+      description: "Your project site has been created successfully",
+    });
+  };
+
+  const handleProjectSiteSelect = async (site: typeof projectSites[0]) => {
+    if (!map.current) return;
+    
+    // Open sidebar when project site is selected
+    setIsSidebarOpen(true);
+    
+    // Get the center point of the polygon for weather data
+    const [lng, lat] = calculatePolygonCenter(site.coordinates);
+    
+    // Fly to the location
+    map.current.flyTo({
+      center: [lng, lat],
+      zoom: 12,
+      essential: true
+    });
+
+    // Update selected location and trigger weather fetch
+    await handleLocationUpdate({ lat, lng });
+    
+    toast({
+      title: "Project Site Selected",
+      description: site.name,
+    });
+  };
+
+  const handleClearPolygon = () => {
+    polygonService.current?.cleanup();
+    // Create a new instance for next use
+    polygonService.current = new PolygonService();
+    setShowProjectForm(false);
+    setCurrentPolygon(null);
+    setIsDrawingMode(false);
+  };
+
   return (
-    <div className="relative h-full w-full">
-      <div ref={mapContainer} className="h-full w-full" />
-      {isLoading && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center backdrop-blur">
-          <div className="flex items-center gap-2 rounded-xl bg-background/30 p-4 shadow-lg backdrop-blur-md">
-            <Spinner className="h-6 w-6" />
-            <p className="text-sm font-medium">Loading map...</p>
-          </div>
-        </div>
-      )}
-      <Sidebar 
-        weatherData={selectedLocation?.weather} 
-        location={selectedLocation ? { 
-          lat: selectedLocation.lat, 
-          lng: selectedLocation.lng,
-          name: selectedLocation.name 
-        } : null}
+    <div className="relative w-full h-full">
+      <div ref={mapContainer} className="w-full h-full" />
+      <Sidebar
+        weatherData={weatherData}
+        location={selectedLocation}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onLocationSelect={handleLocationUpdate}
+        onClearPolygon={handleClearPolygon}
+        isDrawingMode={isDrawingMode}
+        onDrawingModeToggle={handleDrawingModeToggle}
+        onPolygonComplete={handlePolygonComplete}
+        showProjectForm={showProjectForm}
+        onProjectDetailsSubmit={handleProjectDetailsSubmit}
+        projectSites={projectSites}
+        onProjectSiteSelect={handleProjectSiteSelect}
       />
     </div>
   );

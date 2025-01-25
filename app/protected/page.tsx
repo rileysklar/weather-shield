@@ -10,12 +10,14 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState } from "react"
 import { ForecastCards } from "@/components/forecast-cards"
+import MapComponent from '@/components/map'
 
 export default function ProtectedPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [weatherData, setWeatherData] = useState<any>(null);
   const supabase = createClient();
+  const [projectSite, setProjectSite] = useState<number[][] | null>(null);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -45,6 +47,12 @@ export default function ProtectedPage() {
 
     checkSession();
   }, [router]);
+
+  const handleProjectSiteCreate = (coordinates: number[][]) => {
+    setProjectSite(coordinates);
+    // Here you can also save the coordinates to your backend or perform other actions
+    console.log('Project site coordinates:', coordinates);
+  };
 
   if (isLoading) {
     return (
@@ -155,6 +163,9 @@ export default function ProtectedPage() {
           <h2 className="text-xl font-semibold mb-4">5-Day Forecast</h2>
           <ForecastCards forecasts={mockForecasts} />
         </div>
+      </div>
+      <div className="h-full w-full">
+        <MapComponent onProjectSiteCreate={handleProjectSiteCreate} />
       </div>
     </div>
   );

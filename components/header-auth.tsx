@@ -49,13 +49,13 @@ export default async function AuthButton() {
     );
   }
   return user ? (
-    <div className="flex items-center gap-2 sm:gap-4">
+    <div className="flex items-center gap-1 sm:gap-4 bg-glass backdrop-blur-sm border border-foreground/10 px-2 py-1 rounded-md">
       <Avatar className="h-8 w-8">
         <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
       </Avatar>
-      <span className="text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px]">{user.email}</span>
+      <span className="text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px]">{user.email?.split('@')[0]}</span>
       <form action={signOutAction}>
-        <Button type="submit" variant={"outline"} size="sm" className="h-8 sm:h-9">
+        <Button type="submit" variant={"outline"} size="sm" className="h-8 sm:h-9 bg-glass bg-[var(--border)]">
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline ml-2">Sign out</span>
         </Button>
