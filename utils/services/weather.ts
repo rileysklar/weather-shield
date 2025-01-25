@@ -1,3 +1,5 @@
+import { getForecast as getOpenWeatherForecast } from './openweather';
+
 export class WeatherError extends Error {
   constructor(
     message: string,
@@ -124,31 +126,59 @@ export class WeatherService {
         throw new WeatherError('Invalid coordinates', 'INVALID_DATA');
       }
 
-      const response = await this.fetchWithTimeout(
-        `https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`
-      );
-      
-      if (response.status === 404) {
-        throw new WeatherError(
-          'This location is outside the United States. NOAA only provides weather data for US locations.',
-          'LOCATION_OUTSIDE_US',
-          { lat, lon }
+      try {
+        const response = await this.fetchWithTimeout(
+          `https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`
         );
+        
+        if (response.status === 404) {
+          console.log('Location outside US, using OpenWeather fallback');
+          return {
+            properties: {
+              forecast: 'openweather',
+              forecastHourly: 'openweather',
+              gridId: 'openweather',
+              gridX: -1,
+              gridY: -1
+            }
+          };
+        }
+
+        const data = await response.json();
+
+        // Validate response data
+        if (!data.properties?.forecast) {
+          console.log('Invalid NOAA data, using OpenWeather fallback');
+          return {
+            properties: {
+              forecast: 'openweather',
+              forecastHourly: 'openweather',
+              gridId: 'openweather',
+              gridX: -1,
+              gridY: -1
+            }
+          };
+        }
+
+        return data;
+      } catch (error) {
+        // If NOAA request fails for any reason, use OpenWeather as fallback
+        console.log('NOAA request failed, using OpenWeather fallback');
+        return {
+          properties: {
+            forecast: 'openweather',
+            forecastHourly: 'openweather',
+            gridId: 'openweather',
+            gridX: -1,
+            gridY: -1
+          }
+        };
       }
-
-      const data = await response.json();
-
-      // Validate response data
-      if (!data.properties?.forecast) {
-        throw new WeatherError('Invalid point data received', 'INVALID_DATA');
-      }
-
-      return data;
     } catch (error) {
       if (error instanceof WeatherError) {
         throw error;
       }
-      console.error('Error fetching weather point:', error);
+      console.error('Error in getPoint:', error);
       throw new WeatherError('Failed to fetch weather point', 'FETCH_ERROR', error);
     }
   }
@@ -156,9 +186,35 @@ export class WeatherService {
   /**
    * Get the forecast for a specific point
    */
-  static async getForecast(forecastUrl: string): Promise<WeatherForecast> {
+  static async getForecast(forecastUrl: string, lat?: number, lon?: number): Promise<WeatherForecast> {
     try {
-      // Validate URL
+      // Check if we should use OpenWeather
+      if (forecastUrl === 'openweather' && lat !== undefined && lon !== undefined) {
+        const openWeatherData = await getOpenWeatherForecast(lat, lon);
+        
+        // Convert OpenWeather format to NOAA format
+        return {
+          properties: {
+            periods: openWeatherData.map((day, index) => ({
+              number: index + 1,
+              name: new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' }),
+              startTime: day.date,
+              endTime: day.date,
+              isDaytime: true,
+              temperature: day.temp.max,
+              temperatureUnit: "F",
+              temperatureTrend: null,
+              windSpeed: "10 mph", // Default value as OpenWeather doesn't provide this in the same format
+              windDirection: "N", // Default value as OpenWeather doesn't provide this in the same format
+              icon: `https://openweathermap.org/img/wn/${day.weather.icon}@2x.png`,
+              shortForecast: day.weather.main,
+              detailedForecast: `${day.weather.main} with a high of ${day.temp.max}°F and a low of ${day.temp.min}°F`
+            }))
+          }
+        };
+      }
+
+      // Original NOAA forecast logic
       if (!forecastUrl.startsWith('https://api.weather.gov/')) {
         throw new Error('Invalid forecast URL');
       }
@@ -166,7 +222,6 @@ export class WeatherService {
       const response = await this.fetchWithTimeout(forecastUrl);
       const data = await response.json();
 
-      // Validate response data
       if (!data.properties?.periods?.length) {
         throw new Error('Invalid forecast data received');
       }
@@ -215,7 +270,7 @@ export class WeatherService {
       const pointData = await this.getPoint(lat, lon);
       
       // Then get the forecast
-      const forecast = await this.getForecast(pointData.properties.forecast);
+      const forecast = await this.getForecast(pointData.properties.forecast, lat, lon);
 
       // Return simplified data structure
       return {
