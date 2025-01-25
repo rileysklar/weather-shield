@@ -58,8 +58,8 @@ export default function Map() {
     markerEl.className = 'flex items-center justify-center';
     markerEl.innerHTML = `
       <div class="relative">
-        <div class="absolute -inset-3 animate-ping rounded-full bg-primary/50 opacity-75"></div>
-        <div class="relative rounded-full bg-primary/40 p-2 shadow-lg"></div>
+        <div class="absolute -inset-3 animate-ping rounded-full bg-secondary/50 opacity-75"></div>
+        <div class="relative rounded-full bg-primary/70 border border-secondary/50 border-2 p-2 shadow-lg"></div>
       </div>
     `;
 

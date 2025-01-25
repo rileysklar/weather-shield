@@ -9,6 +9,7 @@ import Link from "next/link"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useEffect, useState } from "react"
+import { ForecastCards } from "@/components/forecast-cards"
 
 export default function ProtectedPage() {
   const router = useRouter();
@@ -75,17 +76,47 @@ export default function ProtectedPage() {
               </Card>
             ))}
           </div>
+          <ForecastCards isLoading={true} forecasts={[]} />
         </div>
       </div>
     );
   }
+
+  // Mock forecast data - replace with real API data later
+  const mockForecasts = [
+    {
+      date: new Date(Date.now() + 86400000).toISOString(),
+      temp: { max: 75, min: 62 },
+      weather: { main: "Sunny", icon: "01d" }
+    },
+    {
+      date: new Date(Date.now() + 2 * 86400000).toISOString(),
+      temp: { max: 73, min: 60 },
+      weather: { main: "Partly Cloudy", icon: "02d" }
+    },
+    {
+      date: new Date(Date.now() + 3 * 86400000).toISOString(),
+      temp: { max: 70, min: 58 },
+      weather: { main: "Cloudy", icon: "03d" }
+    },
+    {
+      date: new Date(Date.now() + 4 * 86400000).toISOString(),
+      temp: { max: 72, min: 59 },
+      weather: { main: "Rain", icon: "10d" }
+    },
+    {
+      date: new Date(Date.now() + 5 * 86400000).toISOString(),
+      temp: { max: 74, min: 61 },
+      weather: { main: "Clear", icon: "01d" }
+    }
+  ];
 
   return (
     <div className="flex-1 w-full flex flex-col items-center">
       <div className="flex flex-col gap-8 max-w-5xl p-8 w-full">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div className="flex items-center gap-2">
-            <Cloud className="h-8 w-8 text-primary" />
+            
             <div className="space-y-1">
               <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                 Welcome back!
@@ -118,6 +149,11 @@ export default function ProtectedPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        <div className="w-full">
+          <h2 className="text-xl font-semibold mb-4">5-Day Forecast</h2>
+          <ForecastCards forecasts={mockForecasts} />
         </div>
       </div>
     </div>
