@@ -20,6 +20,9 @@ import { Input } from '@/components/ui/input';
 import { ProjectSiteService } from '@/utils/services/project-site';
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertsAccordion } from './alerts-accordion';
+import { RiskIndicator } from './risk-indicator';
+import { ProcessedAlert } from '@/utils/services/noaa';
 
 interface WeatherData {
   forecast: Array<{
@@ -165,6 +168,7 @@ export function Sidebar({
   const [editingName, setEditingName] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
   const [editingType, setEditingType] = useState('');
+  const [siteAlerts, setSiteAlerts] = useState<ProcessedAlert[]>([]);
 
   useEffect(() => {
     if (location) {
@@ -275,14 +279,14 @@ export function Sidebar({
                     <TabsTrigger value="create">Create</TabsTrigger>
                   </TabsList>
                   <TabsContent value="list" className="mt-4">
-                    <Accordion type="single" collapsible defaultValue="sites">
+                    <Accordion type="single" collapsible>
                       <AccordionItem value="sites">
                         <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
                             <h3 className="font-semibold">Project Sites</h3>
-                            <span className="text-sm text-muted-foreground">
-                              {projectSites.length} sites
-                            </span>
+                            <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
+                              {projectSites.length}
+                            </Badge>
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
@@ -305,33 +309,45 @@ export function Sidebar({
                                     ) : (
                                       <button
                                         onClick={() => onProjectSiteSelect?.(site)}
-                                        className="text-lg font-semibold hover:text-primary transition-colors text-left flex-1"
+                                        className="text-lg font-semibold hover:text-primary transition-colors text-left w-full"
                                       >
                                         {site.name}
                                       </button>
                                     )}
-                                    <div className="flex gap-1 shrink-0">
-                                      {editingSiteId === site.id ? (
-                                        <>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={handleSaveEdit}
-                                            className="h-6 w-6 p-0"
-                                          >
-                                            <Check className="h-3 w-3" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setEditingSiteId(null)}
-                                            className="h-6 w-6 p-0"
-                                          >
-                                            <X className="h-3 w-3" />
-                                          </Button>
-                                        </>
-                                      ) : (
-                                        <>
+                                  </div>
+                                  {editingSiteId === site.id ? (
+                                    <>
+                                      <Input
+                                        value={editingDescription}
+                                        onChange={(e) => setEditingDescription(e.target.value)}
+                                        placeholder="Description"
+                                        className="h-8 w-full text-sm"
+                                      />
+                                      <select
+                                        value={editingType}
+                                        onChange={(e) => setEditingType(e.target.value)}
+                                        className="h-8 w-full text-xs rounded-md border border-input bg-background px-3"
+                                      >
+                                        {PROJECT_TYPES.map(type => (
+                                          <option key={type.value} value={type.value}>
+                                            {type.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {site.description && (
+                                        <p className="text-sm text-muted-foreground">{site.description}</p>
+                                      )}
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs">
+                                            {formatSiteType(site.type)}
+                                          </Badge>
+                                          <RiskIndicator site={site} alerts={siteAlerts} />
+                                        </div>
+                                        <div className="flex gap-1 shrink-0">
                                           <Button
                                             variant="ghost"
                                             size="sm"
@@ -368,36 +384,9 @@ export function Sidebar({
                                               </AlertDialogFooter>
                                             </AlertDialogContent>
                                           </AlertDialog>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {editingSiteId === site.id ? (
-                                    <Input
-                                      value={editingDescription}
-                                      onChange={(e) => setEditingDescription(e.target.value)}
-                                      placeholder="Description"
-                                      className="h-8 w-full text-sm"
-                                    />
-                                  ) : site.description && (
-                                    <p className="text-sm text-muted-foreground">{site.description}</p>
-                                  )}
-                                  {editingSiteId === site.id ? (
-                                    <select
-                                      value={editingType}
-                                      onChange={(e) => setEditingType(e.target.value)}
-                                      className="h-8 w-full text-xs rounded-md border border-input bg-background px-3"
-                                    >
-                                      {PROJECT_TYPES.map(type => (
-                                        <option key={type.value} value={type.value}>
-                                          {type.label}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <Badge variant="outline" className="text-xs">
-                                      {formatSiteType(site.type)}
-                                    </Badge>
+                                        </div>
+                                      </div>
+                                    </>
                                   )}
                                 </div>
                               </Card>
@@ -452,80 +441,83 @@ export function Sidebar({
                   </TabsContent>
                 </Tabs>
 
-                {/* Weather Section - Only show when not in drawing mode */}
-                {!isDrawingMode && !showProjectForm && (
+                {/* Weather Alerts Section */}
+                <AlertsAccordion 
+                  projectSites={projectSites} 
+                  onAlertsChange={setSiteAlerts}
+                />
+
+                {/* Weather Conditions Section */}
+                {weatherData && (
                   <>
-                    {(loading || !weatherData) ? (
+                    {loading ? (
                       <LoadingSkeleton />
                     ) : (
-                      <>
-                        {/* Weather Information */}
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="conditions">
-                            <AccordionTrigger className="hover:no-underline">
-                              <div className="flex flex-col items-start gap-1">
-                                {location?.projectSiteId && (
-                                  <h3 className="text-lg font-semibold">
-                                    {projectSites.find(site => site.id === location.projectSiteId)?.name}
-                                  </h3>
-                                )}
-                                <p className="text-md text-muted-foreground">
-                                  {location?.name || `${location?.lat.toFixed(4)}, ${location?.lng.toFixed(4)}`}
-                                </p>
-                                <p className="text-xs text-muted-foreground">Current Conditions</p>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-4 pt-2">
-                                {/* Current Conditions */}
-                                <div className="grid grid-cols-2 gap-3">
-                                  <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                      <div className="flex items-center gap-3">
-                                        <Thermometer className="h-6 w-6" />
-                                        <span className="text-xs font-medium uppercase tracking-wide">Temp</span>
-                                      </div>
-                                      <p className="text-xs font-medium uppercase tracking-wide">{weatherData.forecast[0].temperature}°{weatherData.forecast[0].temperatureUnit}</p>
-                                    </CardHeader>
-                                  </Card>
-                                  <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                      <div className="flex items-center gap-3">
-                                        <Wind className="h-6 w-6" />
-                                        <span className="text-xs font-medium uppercase tracking-wide">Wind</span>
-                                      </div>
-                                      <p className="text-xs font-medium uppercase tracking-wide">{weatherData.forecast[0].windSpeed}</p>
-                                    </CardHeader>
-                                  </Card>
-                                </div>
-
-                                {/* Temperature Chart */}
-                                <Card className="p-4">
-                                  <TemperatureChart forecast={weatherData.forecast} />
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="conditions">
+                          <AccordionTrigger className="hover:no-underline">
+                            <div className="flex flex-col items-start gap-1">
+                              {location?.projectSiteId && (
+                                <h3 className="text-lg font-semibold">
+                                  {projectSites.find(site => site.id === location.projectSiteId)?.name}
+                                </h3>
+                              )}
+                              <p className="text-md text-muted-foreground">
+                                {location?.name || `${location?.lat.toFixed(4)}, ${location?.lng.toFixed(4)}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">Current Conditions</p>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4 pt-2">
+                              {/* Current Conditions */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <Card>
+                                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <div className="flex items-center gap-3">
+                                      <Thermometer className="h-6 w-6" />
+                                      <span className="text-xs font-medium uppercase tracking-wide">Temp</span>
+                                    </div>
+                                    <p className="text-xs font-medium uppercase tracking-wide">{weatherData.forecast[0].temperature}°{weatherData.forecast[0].temperatureUnit}</p>
+                                  </CardHeader>
                                 </Card>
-
-                                {/* Forecast Periods */}
-                                <div className="space-y-2">
-                                  {weatherData.forecast.map((period) => (
-                                    <Card key={period.number} className="p-4">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                          {getWeatherIcon(period.shortForecast)}
-                                          <div>
-                                            <p className="font-medium">{period.name}</p>
-                                            <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
-                                          </div>
-                                        </div>
-                                        <p className="font-medium">{period.temperature}°{period.temperatureUnit}</p>
-                                      </div>
-                                    </Card>
-                                  ))}
-                                </div>
+                                <Card>
+                                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <div className="flex items-center gap-3">
+                                      <Wind className="h-6 w-6" />
+                                      <span className="text-xs font-medium uppercase tracking-wide">Wind</span>
+                                    </div>
+                                    <p className="text-xs font-medium uppercase tracking-wide">{weatherData.forecast[0].windSpeed}</p>
+                                  </CardHeader>
+                                </Card>
                               </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </>
+
+                              {/* Temperature Chart */}
+                              <Card className="p-4">
+                                <TemperatureChart forecast={weatherData.forecast} />
+                              </Card>
+
+                              {/* Forecast Periods */}
+                              <div className="space-y-2">
+                                {weatherData.forecast.map((period) => (
+                                  <Card key={period.number} className="p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        {getWeatherIcon(period.shortForecast)}
+                                        <div>
+                                          <p className="font-medium">{period.name}</p>
+                                          <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
+                                        </div>
+                                      </div>
+                                      <p className="font-medium">{period.temperature}°{period.temperatureUnit}</p>
+                                    </div>
+                                  </Card>
+                                ))}
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                   </>
                 )}
