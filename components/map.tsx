@@ -7,6 +7,9 @@ import { Sidebar } from './sidebar';
 import { useToast } from './ui/use-toast';
 import { PolygonService } from '@/utils/services/polygon';
 import { ProjectSiteForm, ProjectSiteDetails } from './project-site-form';
+import { ProjectSiteService } from '@/utils/services/project-site';
+import { useUser } from '@/lib/hooks/use-user';
+import { toast } from "@/components/ui/use-toast";
 
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
@@ -32,6 +35,16 @@ interface MapComponentProps {
   onProjectSiteCreate?: (coordinates: number[][], details: ProjectSiteDetails) => void;
 }
 
+interface ProjectSite {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  coordinates: number[][];
+}
+
+type SiteType = 'solar_array' | 'wind_farm' | 'hydroelectric' | 'coal' | 'natural_gas' | 'nuclear' | 'geothermal' | 'biomass' | 'other';
+
 export default function MapComponent({ onProjectSiteCreate }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -49,7 +62,8 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     coordinates: number[][];
   }>>([]);
   const polygonService = useRef<PolygonService | null>(null);
-  const { toast } = useToast();
+  const projectSiteService = useRef(new ProjectSiteService());
+  const { user } = useUser();
 
   const handleLocationUpdate = async (location: { lat: number; lng: number }) => {
     if (!map.current) return;
@@ -120,7 +134,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-v9',
+      style: 'mapbox://styles/rileysklar1/cm6374obn005d01s6eas16xay',
       center: [-98.5795, 39.8283], // Center of the US
       zoom: 3
     });
@@ -201,8 +215,15 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         
         // Create label element
         const labelEl = document.createElement('div');
-        labelEl.className = 'project-site-label bg-background/90 px-2 py-1 rounded-md shadow-md border border-border text-sm font-medium z-10';
+        labelEl.className = 'project-site-label bg-background/90 px-2 py-1 rounded-md shadow-md border border-border text-sm font-medium cursor-pointer hover:bg-accent/50 transition-colors';
+        labelEl.style.zIndex = '1'; // Ensure labels are below sidebar
         labelEl.textContent = site.name;
+
+        // Add click handler
+        labelEl.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent map click
+          handleProjectSiteSelect(site);
+        });
 
         // Add label to map
         new mapboxgl.Marker({
@@ -314,46 +335,80 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     });
   };
 
-  const handleProjectDetailsSubmit = (details: ProjectSiteDetails) => {
-    if (!currentPolygon) return;
+  const handleProjectDetailsSubmit = async (details: ProjectSiteDetails) => {
+    if (!currentPolygon || !user) return;
     
-    // Create new project site
-    const newSite = {
-      id: crypto.randomUUID(),
-      name: details.name,
-      description: details.description,
-      type: details.type,
-      coordinates: currentPolygon
-    };
-    
-    // Add to project sites list
-    setProjectSites(prev => [...prev, newSite]);
-    
-    // Reset all states
-    onProjectSiteCreate?.(currentPolygon, details);
-    
-    // Clean up the polygon service
-    polygonService.current?.cleanup();
-    
-    // Create a new instance for next use
-    polygonService.current = new PolygonService();
-    
-    // Reset all states
-    setIsDrawingMode(false);
-    setShowProjectForm(false);
-    setCurrentPolygon(null);
-    
-    // Switch back to the list tab after creation
-    const listTab = document.querySelector('[value="list"]') as HTMLElement;
-    if (listTab) {
-      listTab.click();
+    try {
+      // Calculate center point for the polygon
+      const [centerLng, centerLat] = calculatePolygonCenter(currentPolygon);
+      
+      // Create new project site in database
+      const newSite = await projectSiteService.current.createProjectSite({
+        name: details.name,
+        description: details.description,
+        site_type: details.type as any, // Type matches our enum
+        coordinates: currentPolygon,
+        center_point: `(${centerLng},${centerLat})`, // PostgreSQL POINT format
+        user_id: user.id
+      });
+      
+      // Add to local state
+      setProjectSites(prev => [...prev, newSite]);
+      
+      // Reset all states
+      onProjectSiteCreate?.(currentPolygon, details);
+      
+      // Clean up the polygon service
+      polygonService.current?.cleanup();
+      
+      // Create a new instance for next use
+      polygonService.current = new PolygonService();
+      
+      // Reset all states
+      setIsDrawingMode(false);
+      setShowProjectForm(false);
+      setCurrentPolygon(null);
+      
+      // Switch back to the list tab after creation
+      const listTab = document.querySelector('[value="list"]') as HTMLElement;
+      if (listTab) {
+        listTab.click();
+      }
+      
+      toast({
+        title: "Project Site Saved",
+        description: "Your project site has been created successfully",
+      });
+    } catch (error) {
+      console.error('Error saving project site:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save project site. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Project Site Saved",
-      description: "Your project site has been created successfully",
-    });
   };
+
+  // Load project sites on mount
+  useEffect(() => {
+    if (!user) return;
+
+    const loadProjectSites = async () => {
+      try {
+        const sites = await projectSiteService.current.getProjectSites();
+        setProjectSites(sites);
+      } catch (error) {
+        console.error('Error loading project sites:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load project sites",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadProjectSites();
+  }, [user]);
 
   const handleProjectSiteSelect = async (site: typeof projectSites[0]) => {
     if (!map.current) return;
@@ -389,6 +444,113 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     setIsDrawingMode(false);
   };
 
+  const handleCancelProjectSite = () => {
+    // Clean up the polygon service
+    polygonService.current?.cleanup();
+    // Create a new instance for next use
+    polygonService.current = new PolygonService();
+    // Reset states
+    setIsDrawingMode(false);
+    setShowProjectForm(false);
+    setCurrentPolygon(null);
+    
+    toast({
+      title: "Project Site Creation Cancelled",
+      description: "You can start over by clicking 'Create Project Site'",
+    });
+  };
+
+  const handleProjectSiteNameEdit = async (siteId: string, newName: string) => {
+    try {
+      await projectSiteService.current.updateProjectSite(siteId, { name: newName });
+      setProjectSites(prevSites => 
+        prevSites.map(site => site.id === siteId ? { ...site, name: newName } : site)
+      );
+      toast({
+        title: "Success",
+        description: "Project site name updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating project site name:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update project site name",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleProjectSiteUpdate = async (siteId: string, updates: Partial<ProjectSite>) => {
+    try {
+      // Format the updates to match database schema
+      const formattedUpdates = {
+        ...updates,
+        // If type is being updated, ensure it's a valid enum value
+        ...(updates.type && { site_type: updates.type as SiteType })
+      };
+
+      // Remove the type field as we're using site_type
+      if ('type' in formattedUpdates) {
+        delete formattedUpdates.type;
+      }
+
+      await projectSiteService.current.updateProjectSite(siteId, formattedUpdates);
+      setProjectSites(prevSites => 
+        prevSites.map(site => site.id === siteId ? { ...site, ...updates } : site)
+      );
+      toast({
+        title: "Success",
+        description: "Project site updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating project site:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update project site",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleProjectSiteDelete = async (siteId: string) => {
+    try {
+      const siteToDelete = projectSites.find(site => site.id === siteId);
+      if (!siteToDelete) return;
+
+      await projectSiteService.current.deleteProjectSite(siteId);
+      
+      // Update local state first
+      setProjectSites(prev => prev.filter(site => site.id !== siteId));
+      
+      // Force a cleanup of all markers and redraw
+      if (map.current) {
+        // Remove all existing markers
+        document.querySelectorAll('.mapboxgl-marker').forEach(marker => marker.remove());
+        
+        // Clear the polygon source
+        (map.current.getSource('saved-polygons') as mapboxgl.GeoJSONSource)?.setData({
+          type: 'FeatureCollection',
+          features: []
+        });
+        
+        // Trigger the updatePolygons effect by forcing a re-render
+        setProjectSites(prev => [...prev]);
+      }
+      
+      toast({
+        title: "Project Site Deleted",
+        description: "The project site has been deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting project site:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project site",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
@@ -404,6 +566,10 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         onPolygonComplete={handlePolygonComplete}
         showProjectForm={showProjectForm}
         onProjectDetailsSubmit={handleProjectDetailsSubmit}
+        onCancelProjectSite={handleCancelProjectSite}
+        onProjectSiteNameEdit={handleProjectSiteNameEdit}
+        onProjectSiteUpdate={handleProjectSiteUpdate}
+        onProjectSiteDelete={handleProjectSiteDelete}
         projectSites={projectSites}
         onProjectSiteSelect={handleProjectSiteSelect}
       />

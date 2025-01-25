@@ -43,18 +43,7 @@ export function PolygonCoordinates({ onClear }: PolygonCoordinatesProps) {
   }, []);
 
   if (coordinates.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Draw Area</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Use the polygon tool to draw an area on the map
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   return (

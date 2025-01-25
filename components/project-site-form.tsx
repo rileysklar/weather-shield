@@ -11,34 +11,37 @@ import { Button } from './ui/button';
 export interface ProjectSiteDetails {
   name: string;
   description: string;
-  type: string;
+  type: 'solar_array' | 'wind_farm' | 'hydroelectric' | 'coal' | 'natural_gas' | 'nuclear' | 'geothermal' | 'biomass' | 'other';
 }
+
+export const PROJECT_TYPES = [
+  { value: 'solar_array', label: 'Solar Array' },
+  { value: 'wind_farm', label: 'Wind Farm' },
+  { value: 'hydroelectric', label: 'Hydroelectric' },
+  { value: 'coal', label: 'Coal' },
+  { value: 'natural_gas', label: 'Natural Gas' },
+  { value: 'nuclear', label: 'Nuclear' },
+  { value: 'geothermal', label: 'Geothermal' },
+  { value: 'biomass', label: 'Biomass' },
+  { value: 'other', label: 'Other' }
+];
 
 interface ProjectSiteFormProps {
   onSubmit: (details: ProjectSiteDetails) => void;
 }
 
-const PROJECT_TYPES = [
-  { value: 'solar', label: 'Solar Array' },
-  { value: 'wind', label: 'Wind Energy' },
-  { value: 'hydro', label: 'Hydroelectric' },
-  { value: 'coal', label: 'Coal Power' },
-  { value: 'natural_gas', label: 'Natural Gas' },
-  { value: 'nuclear', label: 'Nuclear' },
-  { value: 'biomass', label: 'Biomass' },
-  { value: 'geothermal', label: 'Geothermal' },
-];
-
 export function ProjectSiteForm({ onSubmit }: ProjectSiteFormProps) {
-  const [details, setDetails] = useState<ProjectSiteDetails>({
-    name: '',
-    description: '',
-    type: '',
-  });
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState<ProjectSiteDetails['type']>('solar_array');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(details);
+    onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      type
+    });
   };
 
   return (
@@ -49,8 +52,8 @@ export function ProjectSiteForm({ onSubmit }: ProjectSiteFormProps) {
           <Input
             id="name"
             placeholder="Enter project name"
-            value={details.name}
-            onChange={(e) => setDetails({ ...details, name: e.target.value })}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
         </div>
@@ -58,8 +61,8 @@ export function ProjectSiteForm({ onSubmit }: ProjectSiteFormProps) {
         <div className="space-y-2">
           <Label htmlFor="type">Project Type</Label>
           <Select
-            value={details.type}
-            onValueChange={(value) => setDetails({ ...details, type: value })}
+            value={type}
+            onValueChange={(value) => setType(value as ProjectSiteDetails['type'])}
             required
           >
             <SelectTrigger>
@@ -80,8 +83,8 @@ export function ProjectSiteForm({ onSubmit }: ProjectSiteFormProps) {
           <Textarea
             id="description"
             placeholder="Enter project description"
-            value={details.description}
-            onChange={(e) => setDetails({ ...details, description: e.target.value })}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             required
             className="h-24"
           />
