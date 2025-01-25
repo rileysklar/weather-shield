@@ -133,15 +133,8 @@ export class WeatherService {
         
         if (response.status === 404) {
           console.log('Location outside US, using OpenWeather fallback');
-          return {
-            properties: {
-              forecast: 'openweather',
-              forecastHourly: 'openweather',
-              gridId: 'openweather',
-              gridX: -1,
-              gridY: -1
-            }
-          };
+          await this.validateOpenWeatherConfig();
+          return this.getOpenWeatherPoint();
         }
 
         const data = await response.json();
@@ -149,30 +142,16 @@ export class WeatherService {
         // Validate response data
         if (!data.properties?.forecast) {
           console.log('Invalid NOAA data, using OpenWeather fallback');
-          return {
-            properties: {
-              forecast: 'openweather',
-              forecastHourly: 'openweather',
-              gridId: 'openweather',
-              gridX: -1,
-              gridY: -1
-            }
-          };
+          await this.validateOpenWeatherConfig();
+          return this.getOpenWeatherPoint();
         }
 
         return data;
       } catch (error) {
         // If NOAA request fails for any reason, use OpenWeather as fallback
         console.log('NOAA request failed, using OpenWeather fallback');
-        return {
-          properties: {
-            forecast: 'openweather',
-            forecastHourly: 'openweather',
-            gridId: 'openweather',
-            gridX: -1,
-            gridY: -1
-          }
-        };
+        await this.validateOpenWeatherConfig();
+        return this.getOpenWeatherPoint();
       }
     } catch (error) {
       if (error instanceof WeatherError) {
@@ -181,6 +160,29 @@ export class WeatherService {
       console.error('Error in getPoint:', error);
       throw new WeatherError('Failed to fetch weather point', 'FETCH_ERROR', error);
     }
+  }
+
+  private static async validateOpenWeatherConfig() {
+    const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+    if (!apiKey) {
+      throw new WeatherError(
+        'OpenWeather API key not configured',
+        'FETCH_ERROR',
+        'OpenWeather API key is required for locations outside US or when Weather.gov is unavailable'
+      );
+    }
+  }
+
+  private static getOpenWeatherPoint(): WeatherPoint {
+    return {
+      properties: {
+        forecast: 'openweather',
+        forecastHourly: 'openweather',
+        gridId: 'openweather',
+        gridX: -1,
+        gridY: -1
+      }
+    };
   }
 
   /**
@@ -272,6 +274,11 @@ export class WeatherService {
       // Then get the forecast
       const forecast = await this.getForecast(pointData.properties.forecast, lat, lon);
 
+      if (!forecast?.properties?.periods) {
+        console.error('Invalid forecast data:', forecast);
+        throw new Error('Invalid forecast data received');
+      }
+
       // Return simplified data structure
       return {
         forecast: forecast.properties.periods,
@@ -283,6 +290,13 @@ export class WeatherService {
       };
     } catch (error) {
       console.error('Error fetching complete weather data:', error);
+      // If using OpenWeather fallback, ensure we have the API key
+      if (error instanceof Error && error.message.includes('OpenWeather')) {
+        const apiKey = process.env.OPENWEATHER_API_KEY;
+        if (!apiKey) {
+          throw new Error('OpenWeather API key not configured');
+        }
+      }
       throw error;
     }
   }

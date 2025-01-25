@@ -4,8 +4,8 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] bg-contain bg-center bg-no-repeat">
-      <div className="w-full max-w-sm bg-glass backdrop-blur-sm p-8 rounded-lg shadow-lg border border-foreground/10">
+    <div className="container relative min-h-[calc(100vh-4rem)] flex items-center justify-center">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         {children}
       </div>
     </div>

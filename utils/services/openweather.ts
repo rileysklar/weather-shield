@@ -65,7 +65,7 @@ export interface ProcessedForecast {
 
 export async function getForecast(lat: number, lon: number): Promise<ProcessedForecast[]> {
   try {
-    const apiKey = process.env.OPENWEATHER_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
     if (!apiKey) {
       console.error('OpenWeather API key not found in environment variables');
       throw new Error("OpenWeather API key not found");

@@ -50,7 +50,7 @@ export class ProjectSiteService {
     return sites;
   }
 
-  async getProjectSite(id: string) {
+  async getProjectSite(id: string): Promise<ProjectSite | null> {
     const { data: site, error } = await this.supabase
       .from('project_sites')
       .select('*')
@@ -83,14 +83,66 @@ export class ProjectSiteService {
   }
 
   async createWeatherData(data: Omit<WeatherData, 'id' | 'timestamp'>) {
-    const { data: weatherData, error } = await this.supabase
-      .from('weather_data')
-      .insert([data])
-      .select()
-      .single();
+    try {
+      // Add timestamp if not provided
+      const weatherData = {
+        ...data,
+        timestamp: new Date().toISOString()
+      };
 
-    if (error) throw error;
-    return weatherData;
+      // First, check if there's already a recent entry for this site
+      const { data: existingData, error: existingError } = await this.supabase
+        .from('weather_data')
+        .select('id, timestamp')
+        .eq('project_site_id', data.project_site_id)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error('Error checking existing weather data:', existingError);
+        throw existingError;
+      }
+
+      // If there's an existing entry less than 15 minutes old, update it instead of creating a new one
+      if (existingData && 
+          new Date().getTime() - new Date(existingData.timestamp).getTime() < 15 * 60 * 1000) {
+        const { data: updatedData, error: updateError } = await this.supabase
+          .from('weather_data')
+          .update(weatherData)
+          .eq('id', existingData.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Error updating weather data:', updateError);
+          throw updateError;
+        }
+
+        return updatedData;
+      }
+
+      // Otherwise, create a new entry
+      const { data: result, error: insertError } = await this.supabase
+        .from('weather_data')
+        .insert([weatherData])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating weather data:', insertError);
+        throw insertError;
+      }
+
+      if (!result) {
+        throw new Error('No data returned after insert');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Error in createWeatherData:', error);
+      throw error;
+    }
   }
 
   async getLatestWeatherData(projectSiteId: string) {

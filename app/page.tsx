@@ -9,6 +9,6 @@ export default async function Home() {
     redirect("/protected");
   }
   
-  // If not authenticated, go to sign in
-  redirect("/sign-in");
+  // If not authenticated, go to login
+  redirect("/login");
 }

@@ -63,7 +63,7 @@ export class NOAAService {
     'Unknown': 'Unknown urgency'
   };
 
-  static async getAlertsForSite(site: ProjectSite): Promise<ProcessedAlert[]> {
+  static async getAlertsForSite(site: { coordinates: number[][] }): Promise<ProcessedAlert[]> {
     try {
       // Get the center point of the polygon for the alert area
       const centerLat = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[1], 0) / site.coordinates.length;

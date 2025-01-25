@@ -3,64 +3,72 @@ import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { Icons } from "@/components/icons";
+import { Testimonial } from "@/components/testimonial";
+import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 
 export default async function Login(props: { searchParams: Promise<Message> }) {
   const searchParams = await props.searchParams;
   
   return (
-    <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>
-          Enter your credentials to sign in to your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              placeholder="you@example.com"
-              type="email"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
-              <Link
-                className="text-xs text-muted-foreground hover:text-primary"
-                href="/forgot-password"
-              >
-                Forgot password?
-              </Link>
+    <div className="flex flex-col space-y-6">
+      <AuthFormWrapper>
+        <div className="flex flex-col space-y-2 text-center">
+          <Icons.logo className="mx-auto h-8 w-8" />
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+          <p className="text-sm text-muted-foreground">
+            Enter your credentials to sign in to your account
+          </p>
+        </div>
+        <div className="grid gap-6 mt-6">
+          <form className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                type="email"
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect="off"
+                required
+              />
             </div>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-          <SubmitButton formAction={signInAction} className="w-full" pendingText="Signing in...">
-            Sign in
-          </SubmitButton>
-          <FormMessage message={searchParams} />
-        </form>
-      </CardContent>
-      <CardFooter>
-        <p className="text-sm text-muted-foreground">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-primary hover:text-primary/90"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            <SubmitButton formAction={signInAction} className="w-full" pendingText="Signing in...">
+              Sign in
+            </SubmitButton>
+            <FormMessage message={searchParams} />
+          </form>
+        </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Don't have an account?{" "}
-          <Link href="/sign-up" className="text-primary hover:text-primary/90 font-medium">
+          <Link href="/sign-up" className="hover:text-brand underline underline-offset-4">
             Sign up
           </Link>
         </p>
-      </CardFooter>
-    </Card>
+      </AuthFormWrapper>
+      <Testimonial />
+    </div>
   );
 }
