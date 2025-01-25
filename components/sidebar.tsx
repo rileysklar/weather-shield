@@ -29,7 +29,11 @@ interface WeatherData {
 
 interface SidebarProps {
   weatherData: WeatherData | null;
-  location: { lat: number; lng: number } | null;
+  location: { 
+    lat: number; 
+    lng: number;
+    name?: string; // Optional name field for city, state
+  } | null;
   isOpen: boolean;
   onToggle: () => void;
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
@@ -39,14 +43,12 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setLoading(true);
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
+    setLoading(true);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [isOpen, location]); // Trigger loading on sidebar open/close and location changes
 
   const getWeatherIcon = (forecast: string) => {
     const lowercaseForecast = forecast.toLowerCase();
@@ -63,26 +65,24 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
   return (
     <Card 
       className={cn(
-        "fixed top-4 left-4 h-[calc(100vh-32px)] bg-background border-border transition-all duration-300 ease-in-out",
-        isOpen ? "w-[calc(100%-36px)] sm:w-80" : "w-16",
+        "fixed top-4 left-4 bg-background border-border transition-all duration-300 ease-in-out",
+        isOpen 
+          ? "h-[calc(100vh-32px)] w-[calc(100%-36px)] sm:w-80" 
+          : "h-28 sm:h-[calc(100vh-32px)] w-16",
         "dark:bg-background light:bg-[url('/topo-light.svg')] bg-cover bg-center bg-no-repeat"
       )}
     >
       <div className="h-full flex flex-col">
         <CardHeader className="flex-none p-4 space-y-4">
           {!isOpen ? (
-            loading ? (
-              <Skeleton className="h-8 w-8 rounded-md" />
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={onToggle}
-                className="h-8 w-8 p-0 hover:bg-accent"
-              >
-                <PanelLeft className="h-4 w-4" />
-              </Button>
-            )
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onToggle}
+              className="h-8 w-8 p-0 hover:bg-accent"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </Button>
           ) : loading ? (
             <div className="flex flex-col space-y-4 animate-in fade-in duration-300">
               <div className="flex items-center justify-between">
@@ -103,7 +103,7 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
                   <CardTitle>Weather Details</CardTitle>
                   {location ? (
                     <CardDescription>
-                      {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                      {location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}
                     </CardDescription>
                   ) : (
                     <CardDescription>Select a location on the map</CardDescription>
@@ -129,25 +129,92 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
         {isOpen && (
           <CardContent className="flex-1 flex flex-col overflow-hidden p-4 relative">
             <div className="flex-1 overflow-hidden">
-              {weatherData ? (
+              {loading || !weatherData ? (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-32" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Card className="overflow-hidden">
+                        <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-6 w-6" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
+                            <Skeleton className="h-7 w-16" />
+                          </div>
+                        </div>
+                      </Card>
+                      <Card className="overflow-hidden">
+                        <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-4">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-6 w-6" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
+                            <Skeleton className="h-7 w-16" />
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="space-y-2">
+                     
+                      {[1, 2, 3].map((i) => (
+                        <Card key={i} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Skeleton className="h-5 w-5 rounded-full" />
+                              <div>
+                                <Skeleton className="h-4 w-24 mb-1" />
+                                <Skeleton className="h-3 w-32" />
+                              </div>
+                            </div>
+                            <Skeleton className="h-4 w-12" />
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    
+                    <Card className="p-4">
+                      <Skeleton className="h-12 w-full" />
+                    </Card>
+                    <Card className="p-4">
+                      <Skeleton className="h-6 w-full" />
+                    </Card>
+                  </div>
+                </div>
+              ) : (
                 <ScrollArea className="h-[calc(100%-60px)] -mr-4 pr-4">
                   <div className="space-y-6">
                     {/* Current Weather */}
                     <div className="space-y-4">
                       <h3 className="font-semibold">Current Conditions</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Card className="p-4 flex items-center gap-2">
-                          <Thermometer className="h-4 w-4 text-primary" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">Temperature</p>
-                            <p className="font-medium">{weatherData.forecast[0].temperature}°{weatherData.forecast[0].temperatureUnit}</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Card className="overflow-hidden">
+                          <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-4">
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2 text-primary">
+                                <Thermometer className="h-6 w-6" />
+                                <span className="text-xs font-medium uppercase tracking-wide">Temp</span>
+                              </div>
+                              <p className="text-md font-semibold">{weatherData.forecast[0].temperature}°{weatherData.forecast[0].temperatureUnit}</p>
+                            </div>
                           </div>
                         </Card>
-                        <Card className="p-4 flex items-center gap-2">
-                          <Wind className="h-4 w-4 text-primary" />
-                          <div>
-                            <p className="text-sm text-muted-foreground">Wind</p>
-                            <p className="font-medium">{weatherData.forecast[0].windSpeed}</p>
+                        <Card className="overflow-hidden">
+                          <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-4">
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2 text-primary">
+                                <Wind className="h-6 w-6" />
+                                <span className="text-xs font-medium uppercase tracking-wide">Wind</span>
+                              </div>
+                              <p className="text-md font-semibold">{weatherData.forecast[0].windSpeed}</p>
+                            </div>
                           </div>
                         </Card>
                       </div>
@@ -206,25 +273,6 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
                     </Accordion>
                   </div>
                 </ScrollArea>
-              ) : (
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <Skeleton className="h-6 w-32" />
-                    <div className="grid grid-cols-2 gap-4">
-                      <Skeleton className="h-24" />
-                      <Skeleton className="h-24" />
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <Skeleton className="h-6 w-40" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-[200px]" />
-                      {[1, 2].map((i) => (
-                        <Skeleton key={i} className="h-16" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
               )}
             </div>
           </CardContent>

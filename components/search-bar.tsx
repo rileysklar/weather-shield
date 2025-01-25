@@ -13,6 +13,7 @@ import { Search, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { searchLocations } from '@/utils/services/location';
 import { DialogTitle } from './ui/dialog';
+import { Skeleton } from './ui/skeleton';
 
 interface SearchBarProps {
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
@@ -98,10 +99,17 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
           {isLoading && (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-4 w-4 animate-spin" />
+              
             </div>
           )}
           {!isLoading && results.length === 0 && (
-            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              <div className="p-2 space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-[80%]" />
+                <Skeleton className="h-8 w-[60%]" />
+              </div>
+            </CommandGroup>
           )}
           {!isLoading && results.length > 0 && (
             <CommandGroup heading="Locations">

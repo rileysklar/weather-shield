@@ -13,6 +13,23 @@ import { WeatherError } from '@/utils/services/weather';
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
+async function reverseGeocode(lng: number, lat: number) {
+  const response = await fetch(
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxgl.accessToken}&types=place,region`
+  );
+  const data = await response.json();
+  
+  if (data.features && data.features.length > 0) {
+    const place = data.features.find((f: any) => f.place_type.includes('place'));
+    const region = data.features.find((f: any) => f.place_type.includes('region'));
+    
+    if (place && region) {
+      return `${place.text}, ${region.text}`;
+    }
+  }
+  return null;
+}
+
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -20,6 +37,7 @@ export default function Map() {
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
     lng: number;
+    name?: string;
     weather?: any;
   } | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,6 +47,7 @@ export default function Map() {
     if (!map.current) return;
 
     setIsSidebarOpen(true);
+    setSelectedLocation(null); // Reset current weather data
 
     // Remove existing marker if any
     const existingMarker = document.querySelector('.mapboxgl-marker');
@@ -40,7 +59,7 @@ export default function Map() {
     markerEl.innerHTML = `
       <div class="relative">
         <div class="absolute -inset-3 animate-ping rounded-full bg-primary/50 opacity-75"></div>
-        <div class="relative rounded-full bg-primary p-2 shadow-lg"></div>
+        <div class="relative rounded-full bg-primary/40 p-2 shadow-lg"></div>
       </div>
     `;
 
@@ -60,10 +79,18 @@ export default function Map() {
     });
 
     try {
-      const weatherData = await getWeatherData(location.lat, location.lng);
-      setSelectedLocation({ ...location, weather: weatherData });
+      const [weatherData, locationName] = await Promise.all([
+        getWeatherData(location.lat, location.lng),
+        location.name ? Promise.resolve(location.name) : reverseGeocode(location.lng, location.lat)
+      ]);
+      
+      setSelectedLocation({ 
+        ...location, 
+        weather: weatherData,
+        name: locationName || undefined
+      });
     } catch (error) {
-      console.error('Error fetching weather data:', error);
+      console.error('Error fetching data:', error);
       if (error instanceof WeatherError && error.code === 'LOCATION_OUTSIDE_US') {
         toast({
           title: "Location Outside US",
@@ -73,8 +100,8 @@ export default function Map() {
         });
       } else {
         toast({
-          title: "Location Outside US",
-          description: "NOAA only provides weather data for locations within the United States. Try clicking somewhere within the US borders.",
+          title: "Error",
+          description: "An error occurred while fetching the weather data. Please try again.",
           variant: "destructive",
           duration: 5000,
         });
@@ -121,8 +148,8 @@ export default function Map() {
     <div className="fixed inset-0 z-50">
       <div ref={mapContainer} className="w-full h-full" />
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2 rounded-lg border bg-background p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur">
+          <div className="flex items-center gap-2 rounded-xl bg-background/30 p-4 shadow-lg backdrop-blur-md">
             <Spinner className="h-6 w-6" />
             <p className="text-sm font-medium">Loading map...</p>
           </div>
@@ -130,7 +157,11 @@ export default function Map() {
       )}
       <Sidebar 
         weatherData={selectedLocation?.weather} 
-        location={selectedLocation ? { lat: selectedLocation.lat, lng: selectedLocation.lng } : null}
+        location={selectedLocation ? { 
+          lat: selectedLocation.lat, 
+          lng: selectedLocation.lng,
+          name: selectedLocation.name 
+        } : null}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onLocationSelect={handleLocationUpdate}
