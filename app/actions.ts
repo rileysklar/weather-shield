@@ -44,16 +44,26 @@ export const signInAction = async (formData: FormData) => {
   const password = formData.get("password") as string;
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) {
+    if (error) throw error;
+
+    // Get the session to confirm we're logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
+      return redirect("/protected");
+    }
+
+    throw new Error("No session after login");
+  } catch (error: any) {
+    console.error("Sign in error:", error.message);
     return encodedRedirect("error", "/sign-in", error.message);
   }
-
-  return redirect("/protected");
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {

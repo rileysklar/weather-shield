@@ -17,34 +17,52 @@ export const updateSession = async (request: NextRequest) => {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() {
-            return request.cookies.getAll();
+          get(name: string) {
+            return request.cookies.get(name)?.value;
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) =>
-              request.cookies.set(name, value),
-            );
-            response = NextResponse.next({
-              request,
+          set(name: string, value: string, options: any) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
             });
-            cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options),
-            );
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            });
+          },
+          remove(name: string, options: any) {
+            request.cookies.set({
+              name,
+              value: "",
+              ...options,
+            });
+            response.cookies.set({
+              name,
+              value: "",
+              ...options,
+            });
           },
         },
-      },
+      }
     );
 
-    // This will refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/server-side/nextjs
-    const user = await supabase.auth.getUser();
+    // Get the session
+    const { data: { session } } = await supabase.auth.getSession();
 
-    // protected routes
-    if (request.nextUrl.pathname.startsWith("/protected") && user.error) {
-      return NextResponse.redirect(new URL("/sign-in", request.url));
+    // Handle protected routes
+    if (request.nextUrl.pathname.startsWith("/protected")) {
+      if (!session) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
+      }
     }
 
-    if (request.nextUrl.pathname === "/" && !user.error) {
+    // Handle auth pages when logged in
+    if (session && (
+      request.nextUrl.pathname.startsWith("/sign-in") ||
+      request.nextUrl.pathname.startsWith("/sign-up")
+    )) {
       return NextResponse.redirect(new URL("/protected", request.url));
     }
 
