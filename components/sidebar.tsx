@@ -65,10 +65,10 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
   return (
     <Card 
       className={cn(
-        "fixed top-4 left-4 bg-background border-border transition-all duration-300 ease-in-out",
+        "fixed top-20 left-4 bg-background border-border transition-all duration-300 ease-in-out",
         isOpen 
-          ? "h-[calc(100vh-32px)] w-[calc(100%-36px)] sm:w-80" 
-          : "h-28 sm:h-[calc(100vh-32px)] w-16",
+          ? "h-[calc(100vh-96px)] w-[calc(100%-36px)] sm:w-80" 
+          : "h-28 sm:h-28 w-16",
         "dark:bg-background light:bg-[url('/topo-light.svg')] bg-cover bg-center bg-no-repeat"
       )}
     >
@@ -100,13 +100,14 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
             <div className="flex flex-col space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <CardTitle>Weather Details</CardTitle>
+                  
                   {location ? (
-                    <CardDescription>
-                      {location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}
-                    </CardDescription>
+                    
+                      <CardTitle>{location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}</CardTitle>
+                      
+                   
                   ) : (
-                    <CardDescription>Select a location on the map</CardDescription>
+                    <CardDescription>Select a US location on the map</CardDescription>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -168,7 +169,7 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
                             <div className="flex items-center gap-3">
                               <Skeleton className="h-5 w-5 rounded-full" />
                               <div>
-                                <Skeleton className="h-4 w-24 mb-1" />
+                               
                                 <Skeleton className="h-3 w-32" />
                               </div>
                             </div>
@@ -183,9 +184,7 @@ export function Sidebar({ weatherData, location, isOpen, onToggle, onLocationSel
                     <Card className="p-4">
                       <Skeleton className="h-12 w-full" />
                     </Card>
-                    <Card className="p-4">
-                      <Skeleton className="h-6 w-full" />
-                    </Card>
+                   
                   </div>
                 </div>
               ) : (

@@ -100,8 +100,8 @@ export default function Map() {
         });
       } else {
         toast({
-          title: "Error",
-          description: "An error occurred while fetching the weather data. Please try again.",
+          title: "Location Outside US",
+          description: "NOAA only provides weather data for locations within the United States. Try clicking somewhere within the US borders.",
           variant: "destructive",
           duration: 5000,
         });
@@ -145,10 +145,10 @@ export default function Map() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div ref={mapContainer} className="w-full h-full" />
+    <div className="relative h-full w-full">
+      <div ref={mapContainer} className="h-full w-full" />
       {isLoading && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center backdrop-blur">
           <div className="flex items-center gap-2 rounded-xl bg-background/30 p-4 shadow-lg backdrop-blur-md">
             <Spinner className="h-6 w-6" />
             <p className="text-sm font-medium">Loading map...</p>
