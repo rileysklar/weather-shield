@@ -456,7 +456,7 @@ export function Sidebar({
                       <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="conditions">
                           <AccordionTrigger className="hover:no-underline">
-                            <div className="flex flex-col items-start gap-1">
+                            <div className="flex flex-col items-start gap-1 flex-1">
                               {location?.projectSiteId && (
                                 <h3 className="text-lg font-semibold">
                                   {projectSites.find(site => site.id === location.projectSiteId)?.name}

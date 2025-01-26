@@ -8,6 +8,9 @@ import { EnvVarWarning } from "@/components/env-var-warning";
 import Link from "next/link";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -44,7 +47,13 @@ export default function RootLayout({
             <nav className="relative w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
               <div className="w-full flex justify-between items-center p-3 px-6 text-sm">
                 <div className="flex gap-5 items-center font-semibold roboto">
-                  <Link href="/" className="text-xl black-ops">Weather Shield</Link>
+                  <span className="text-xl black-ops">Weather Shield</span>
+                  <Link href="/docs">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <FileText className="h-4 w-4" />
+                      Docs
+                    </Button>
+                  </Link>
                 </div>
                 <div className="flex items-center gap-4">
                   <ThemeSwitcher />

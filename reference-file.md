@@ -1,90 +1,115 @@
 Weather Shield is a sophisticated web application that helps organizations monitor and assess weather-related risks for their project sites across the United States. The platform combines interactive mapping, real-time weather data, and comprehensive risk assessment tools to provide actionable insights for asset protection.
 
 Core Features
+
 Interactive Map Interface
-Dynamic Map Navigation: Pan, zoom, and explore project sites across the United States
-Site Visualization:
-Project sites displayed with custom polygons
-Color-coded based on alert status (blue for normal, red for active alerts)
-Site names always visible for easy identification
-Active weather alerts displayed beneath site names
+- Dynamic Map Navigation: Pan, zoom, and explore project sites across the United States
+- Site Visualization:
+  - Project sites displayed with custom polygons
+  - Color-coded based on risk level and alert status
+  - Site names and current weather conditions always visible
+  - Active weather alerts displayed with severity indicators
+
 Project Site Management
-Site Creation:
-Interactive polygon drawing tool
-Custom site naming and description
-Automatic coordinate capture
-Site Editing:
-Update site names and descriptions
-Immediate UI updates across all components
-Site Deletion:
-Remove sites with confirmation
-Automatic cleanup of associated weather data
+- Site Types Support:
+  - Solar Arrays (1.2x weather sensitivity)
+  - Wind Farms (1.3x weather sensitivity)
+  - Hydroelectric (1.1x weather sensitivity)
+  - Coal (0.9x weather sensitivity)
+  - Natural Gas (0.9x weather sensitivity)
+  - Nuclear (0.8x weather sensitivity)
+  - Geothermal (0.9x weather sensitivity)
+  - Biomass (0.9x weather sensitivity)
+- Site Creation:
+  - Interactive polygon drawing tool
+  - Custom site naming and description
+  - Automatic coordinate capture and center point calculation
+- Site Editing:
+  - Update site names, types, and descriptions
+  - Immediate UI updates across all components
+- Site Deletion:
+  - Remove sites with confirmation
+  - Automatic cleanup of associated weather data
+
 Weather Monitoring
-Real-time Weather Data:
-Temperature readings
-Precipitation probability
-Wind speed measurements
-Active weather alerts
-Weather Popup:
-Click anywhere on map for instant weather information
-Option to create new project site from location
-Location Search:
-Search for specific locations
-Automatic map centering and weather display
+- Real-time Weather Data:
+  - Temperature readings (current and feels like)
+  - Wind speed and direction measurements
+  - Cloud cover percentage
+  - Visibility conditions
+  - Detailed weather descriptions
+- Multi-source Weather Data:
+  - Weather.gov integration
+  - OpenWeather fallback support
+  - Automatic source selection based on availability
+- Weather Statistics:
+  - Average and maximum temperatures
+  - Average and maximum wind speeds
+  - Site-wide weather trends
+
 Risk Assessment
-Comprehensive Risk Analysis:
-Weather alert severity evaluation
-Precipitation risk assessment
-Wind damage probability
-Combined risk score calculation
-Visual Risk Indicators:
-Risk level badges (Low to Severe)
-Radar charts for risk factor breakdown
-Progress bars for risk scores
-Alert Management:
-Configurable alert preferences
-Filter by warning types (Warnings, Watches, Advisories, Statements)
-Expandable alert details
-Active Alerts Dashboard
-Alert Overview:
-Real-time alert monitoring
-Alert type categorization
-Severity indicators
-Site-specific alert tracking
-Alert Navigation:
-Click-through to affected sites
-Automatic map centering on alert locations
-Quick access to detailed risk assessments
-User Interface
-Responsive Sidebar:
-Collapsible interface
-Project site listing
-Risk assessment views
-Alert monitoring
-Search Functionality:
-Location-based search
-Site name search
-Alert filtering
-Dynamic Updates:
-Real-time data refresh
-Immediate UI feedback
-Smooth transitions and animations
-Technical Features
-Built with Next.js and React
-Mapbox GL JS for mapping functionality
-Supabase backend for data storage
-TypeScript for type safety
-Tailwind CSS for styling
-Data Integration
-Weather Data:
-NOAA integration for weather alerts
-Automatic data updates
-Geospatial Data:
-Custom polygon support
-Coordinate system management
-Boundary calculations
-Security Features
-Environment variable protection
-API key management
-Secure data storage
-Error handling and validation
+- Comprehensive Risk Analysis:
+  - Five-level risk categorization (Minor, Moderate, High, Severe, Extreme)
+  - Customized risk thresholds:
+    - Extreme: ≥80 risk score
+    - Severe: ≥60 risk score
+    - High: ≥40 risk score
+    - Moderate: ≥20 risk score
+    - Minor: >0 risk score
+- Site-specific Risk Factors:
+  - Hail risk assessment for solar panels
+  - Wind speed impact on equipment
+  - Cloud cover effect on generation
+  - Precipitation interference
+  - Temperature extremes
+- Risk Visualization:
+  - Color-coded risk indicators
+  - Interactive risk factor charts
+  - Historical risk trends
+  - Site type-specific risk multipliers
+
+Alert Management
+- Alert Processing:
+  - Real-time NOAA alert integration
+  - Geographical alert matching
+  - Severity classification
+  - Multi-site alert correlation
+- Alert Features:
+  - Configurable alert preferences
+  - Filter by severity levels
+  - Location-based alert matching
+  - Expandable alert details
+- Alert Statistics:
+  - Total active alerts count
+  - Sites affected by alerts
+  - Highest severity tracking
+  - Alert duration monitoring
+
+Dashboard Interface
+- Site Overview:
+  - Paginated site listings
+  - Grouping by risk level
+  - Quick site selection
+  - Detailed site information cards
+- Weather Statistics:
+  - Fleet-wide weather trends
+  - Site-specific weather data
+  - Statistical analysis tools
+- Risk Assessment Views:
+  - Risk factor breakdown
+  - Site vulnerability analysis
+  - Historical risk patterns
+- Progressive Loading:
+  - Component-based loading states
+  - Optimized data fetching
+  - Smooth loading transitions
+
+Technical Implementation
+- Built with Next.js and React
+- TypeScript for type safety
+- Tailwind CSS for styling
+- Real-time data updates
+- Responsive design
+- Error handling and fallbacks
+- Multiple weather data source support
+- Geographical coordinate processing

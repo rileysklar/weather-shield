@@ -48,11 +48,11 @@ export class NOAAService {
   private static readonly BASE_URL = 'https://api.weather.gov';
 
   private static severityMap: { [key: string]: string } = {
-    'Extreme': 'Extreme conditions - Take immediate action',
-    'Severe': 'Severe conditions - Take precautions',
-    'Moderate': 'Moderate severity - Be aware',
-    'Minor': 'Minor severity - Use caution',
-    'Unknown': 'Severity unknown'
+    'Extreme': 'Extreme',
+    'Severe': 'Severe',
+    'Moderate': 'Moderate',
+    'Minor': 'Minor',
+    'Unknown': 'Unknown'
   };
 
   private static urgencyMap: { [key: string]: string } = {

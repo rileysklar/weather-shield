@@ -74,14 +74,14 @@ export default function ProtectedPage() {
   return (
     <SiteFilterProvider sites={sites}>
       <div className="container mx-auto p-8 space-y-8">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row gap-2 justify-between items-center">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">Project Sites Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground">
               Monitor weather conditions and alerts across all your project sites
             </p>
           </div>
-          <Button asChild size="lg" className="gap-2">
+          <Button asChild size="lg" className="gap-2 w-full mt-4 sm:w-auto sm:mt-0">
             <Link href="/map">
               <Map className="h-5 w-5" />
               Project Site Map

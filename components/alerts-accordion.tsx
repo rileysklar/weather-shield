@@ -34,12 +34,33 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
           affectedSites: projectSites.filter(site => {
             const centerLat = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[1], 0) / site.coordinates.length;
             const centerLng = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[0], 0) / site.coordinates.length;
-            return alert.areas.some(area => 
-              area.toLowerCase().includes(centerLat.toFixed(2)) || 
-              area.toLowerCase().includes(centerLng.toFixed(2))
-            );
+            
+            // Split areas into individual locations and normalize
+            return alert.areas.some(area => {
+              // Split by common delimiters and clean up
+              const locations = area
+                .split(/[,;]/)
+                .map(loc => loc.trim().toLowerCase())
+                .filter(loc => loc.length > 0);
+              
+              // Get site location name if available
+              const siteName = site.name?.toLowerCase() || '';
+              const siteDesc = site.description?.toLowerCase() || '';
+              
+              // Check each location against site info
+              return locations.some(location => 
+                // Check if site name or description contains the location name
+                siteName.includes(location) || 
+                location.includes(siteName) ||
+                siteDesc.includes(location) ||
+                // Also check coordinates as fallback
+                location.includes(centerLat.toFixed(2)) || 
+                location.includes(centerLng.toFixed(2))
+              );
+            });
           })
         }));
+        console.log('Alerts with sites:', alertsWithSites);
         setAlerts(alertsWithSites);
         onAlertsChange?.(siteAlerts);
       } catch (error) {
@@ -81,12 +102,26 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="alerts">
         <AccordionTrigger className="hover:no-underline">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold">Weather Alerts</h3>
-            {alerts.length > 0 && (
-              <Badge variant="outline" className="rounded-full px-2 py-0.5 text-xs">
-                {alerts.length}
-              </Badge>
+          <div className="flex flex-col items-start gap-1 pr-6">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">Weather Alerts</h3>
+              {alerts.length > 0 && (
+                <Badge variant="outline" className="rounded-full px-2 py-0.5 text-xs">
+                  {alerts.length}
+                </Badge>
+              )}
+            </div>
+            {alerts.some(alert => alert.affectedSites.length > 0) && (
+              <div className="flex flex-wrap gap-1">
+                {alerts.map(alert => (
+                  alert.affectedSites.map(site => (
+                    <Badge key={`${alert.id}-${site.id}`} variant="secondary" className="text-xs">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {site.name}
+                    </Badge>
+                  ))
+                ))}
+              </div>
             )}
           </div>
         </AccordionTrigger>

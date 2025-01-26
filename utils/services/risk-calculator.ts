@@ -1,7 +1,7 @@
 import { ProcessedAlert } from './noaa';
-import { ProjectSite } from '@/types/project-site';
+import { DashboardSiteData } from '@/utils/services/dashboard';
 
-export type RiskCategory = 'low' | 'moderate' | 'high' | 'severe' | 'extreme';
+export type RiskCategory = 'low' | 'moderate' | 'high' | 'severe' | 'extreme' | 'minor';
 
 export interface RiskAssessment {
   riskLevel: number;  // 0-100
@@ -10,7 +10,33 @@ export interface RiskAssessment {
 }
 
 export class RiskCalculatorService {
-  static calculateSiteRisk(site: ProjectSite, alerts: ProcessedAlert[]): RiskAssessment {
+  static calculateSiteRisk(site: DashboardSiteData, alerts: ProcessedAlert[]): RiskAssessment {
+    // First check for basic weather conditions that might trigger minor warnings
+    const minorFactors = [];
+    
+    // Check for minor weather conditions that might affect the site
+    if (site.currentWeather) {
+      const { wind_speed, clouds_percentage, weather_condition, temperature } = site.currentWeather;
+      
+      // More sensitive wind speed threshold
+      if (wind_speed && wind_speed > 10) {
+        minorFactors.push('Elevated Wind Speed (Minor)');
+      }
+      // Lower cloud cover threshold
+      if (clouds_percentage && clouds_percentage > 40) {
+        minorFactors.push('Significant Cloud Cover (Minor)');
+      }
+      // Any mention of rain or clouds in weather condition
+      if (weather_condition?.toLowerCase().includes('rain') || 
+          weather_condition?.toLowerCase().includes('cloud')) {
+        minorFactors.push('Precipitation Risk (Minor)');
+      }
+      // Temperature extremes
+      if (temperature && (temperature > 85 || temperature < 32)) {
+        minorFactors.push('Temperature Warning (Minor)');
+      }
+    }
+
     // Filter alerts that affect this site
     const siteAlerts = alerts.filter(alert => {
       // Calculate site center
@@ -39,6 +65,16 @@ export class RiskCalculatorService {
       });
     });
 
+    // If we have minor factors but no alerts, return minor risk
+    if (siteAlerts.length === 0 && minorFactors.length > 0) {
+      return {
+        riskLevel: 25, // Low but non-zero risk level
+        riskCategory: 'minor',
+        primaryRiskFactors: minorFactors
+      };
+    }
+
+    // If no alerts and no minor factors, return low risk
     if (siteAlerts.length === 0) {
       return {
         riskLevel: 0,
@@ -47,18 +83,18 @@ export class RiskCalculatorService {
       };
     }
 
-    // Calculate base risk from alert severity
+    // Calculate base risk from alert severity with adjusted scores
     const severityScores = {
       'Extreme': 100,
-      'Severe': 80,
-      'Moderate': 60,
-      'Minor': 40,
-      'Unknown': 20
+      'Severe': 75,
+      'Moderate': 50,
+      'Minor': 25,
+      'Unknown': 15
     };
 
     // Calculate risk based on most severe alert and accumulate risk factors
     let maxSeverityScore = 0;
-    const riskFactors: string[] = [];
+    const riskFactors: string[] = [...minorFactors]; // Include minor factors with alerts
 
     siteAlerts.forEach(alert => {
       const severityScore = severityScores[alert.severity as keyof typeof severityScores] || severityScores.Unknown;
@@ -84,12 +120,13 @@ export class RiskCalculatorService {
     const siteMultiplier = siteTypeMultipliers[site.type] || 1.0;
     const finalRiskLevel = Math.min(100, Math.round(maxSeverityScore * siteMultiplier));
 
-    // Determine risk category based on final risk level
+    // Determine risk category based on final risk level with adjusted thresholds
     let riskCategory: RiskCategory;
-    if (finalRiskLevel >= 90) riskCategory = 'extreme';
-    else if (finalRiskLevel >= 70) riskCategory = 'severe';
-    else if (finalRiskLevel >= 50) riskCategory = 'high';
-    else if (finalRiskLevel >= 30) riskCategory = 'moderate';
+    if (finalRiskLevel >= 80) riskCategory = 'extreme';
+    else if (finalRiskLevel >= 60) riskCategory = 'severe';
+    else if (finalRiskLevel >= 40) riskCategory = 'high';
+    else if (finalRiskLevel >= 20) riskCategory = 'moderate';
+    else if (finalRiskLevel > 0) riskCategory = 'minor';
     else riskCategory = 'low';
 
     return {
@@ -109,6 +146,8 @@ export class RiskCalculatorService {
         return 'text-warning border-warning';
       case 'moderate':
         return 'text-warning/80 border-warning/80';
+      case 'minor':
+        return 'text-blue-500 border-blue-500';
       default:
         return 'text-muted-foreground border-muted';
     }
