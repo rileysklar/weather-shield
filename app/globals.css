@@ -78,6 +78,10 @@
   }
 }
 
+html {
+scroll-behavior: smooth;
+}
+
 .black-ops {
   font-family: 'Black Ops One', sans-serif;
 }
