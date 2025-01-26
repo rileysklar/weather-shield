@@ -7,6 +7,7 @@ export interface DashboardSiteData {
   name: string;
   description: string | null;
   type: string;
+  coordinates: number[][];
   currentWeather: WeatherData | null;
   alerts: {
     count: number;
@@ -42,6 +43,7 @@ export class DashboardService {
               name: site.name,
               description: site.description,
               type: site.type,
+              coordinates: site.coordinates,
               currentWeather: latestWeather,
               alerts: {
                 count: latestWeather?.alerts?.length || 0,
@@ -55,6 +57,7 @@ export class DashboardService {
               name: site.name,
               description: site.description,
               type: site.type,
+              coordinates: site.coordinates,
               currentWeather: null,
               alerts: {
                 count: 0,

@@ -86,10 +86,10 @@ export class WeatherUpdateService {
     if (!alerts || alerts.length === 0) return null;
 
     const severityOrder = {
-      'Minor severity - Use caution': 'minor',
-      'Moderate severity - Be aware': 'moderate',
-      'Severe conditions - Take precautions': 'severe',
-      'Extreme conditions - Take immediate action': 'extreme'
+      'Minor': 'minor',
+      'Moderate': 'moderate',
+      'Severe': 'severe',
+      'Extreme': 'extreme'
     } as const;
 
     let highestSeverity: 'minor' | 'moderate' | 'severe' | 'extreme' | null = null;

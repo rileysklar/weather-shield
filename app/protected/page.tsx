@@ -117,13 +117,13 @@ export default function ProtectedPage() {
           <Button asChild size="lg" className="gap-2">
             <Link href="/map">
               <Map className="h-5 w-5" />
-              Interactive Map
+             Project Site Map
             </Link>
           </Button>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[300px,1fr]">
-          <Card className="p-4 h-fit">
+          <Card className="h-fit sticky top-8 p-4">
             <SiteFilters />
           </Card>
           
@@ -133,14 +133,14 @@ export default function ProtectedPage() {
               onSiteSelect={handleSiteSelect} 
             />
 
-            <RiskAssessment sites={sites} />
-
             {selectedSiteHistory.length > 0 && (
               <WeatherHistory 
                 data={selectedSiteHistory}
-                title="Weather History (Last 7 Days)"
+                title={`${sites.find(s => s.id === selectedSiteHistory[0]?.project_site_id)?.name || 'Selected Site'} Weather - Last 7 Days`}
               />
             )}
+
+            <RiskAssessment sites={sites} />
           </div>
         </div>
       </div>
