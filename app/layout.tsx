@@ -114,17 +114,17 @@ export default function RootLayout({
                               </Button>
                             </Link>
                             <Link href="/protected">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <PieChart className="h-4 w-4" />
-                          Dashboard
-                        </Button>
-                      </Link>
-                      <Link href="/map">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <Map className="h-4 w-4" />
-                          Map
-                        </Button>
-                      </Link>
+                              <Button variant="ghost" size="sm" className="gap-2">
+                                <PieChart className="h-4 w-4" />
+                                Dashboard
+                              </Button>
+                            </Link>
+                            <Link href="/map">
+                              <Button variant="ghost" size="sm" className="gap-2">
+                                <Map className="h-4 w-4" />
+                                Map
+                              </Button>
+                            </Link>
                             <Link href="/docs">
                               <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
                                 <FileText className="h-4 w-4" />
