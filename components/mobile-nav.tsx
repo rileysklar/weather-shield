@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { FileText, Menu, LogIn, UserPlus, X } from "lucide-react";
+import { FileText, Menu, LogIn, UserPlus, X, Home } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   DropdownMenu,
@@ -52,6 +52,12 @@ export default function MobileNav() {
               </Button>
             </Link>
             <DropdownMenuSeparator />
+            <Link href="/home">
+              <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                <Home className="h-4 w-4" />
+                Home
+              </Button>
+            </Link>
             <Link href="/sign-in">
               <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
                 <LogIn className="h-4 w-4" />

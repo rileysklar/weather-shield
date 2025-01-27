@@ -38,24 +38,7 @@ export default function DocsLayout({
 }) {
   return (
     <div className="relative min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <div className="flex items-center gap-2 font-semibold">
-            <Shield className="h-6 w-6" />
-            <Link href="/home">Weather Shield</Link>
-          </div>
-          
-          <div className="flex items-center gap-2 ml-auto">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/home">
-                <Home className="h-4 w-4 mr-2" />
-                Back to Home
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+     
 
       <div className="container flex-1 items-start md:grid md:grid-cols-[220px_1fr] md:gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
         {/* Sidebar */}

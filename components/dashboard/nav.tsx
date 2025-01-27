@@ -4,11 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Map, LayoutDashboard, LogOut } from "lucide-react";
+import { Map, LayoutDashboard, LogOut, Home, HelpCircle } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { useOnboarding } from "@/hooks/use-onboarding";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { setIsOnboardingOpen, setHasCompletedOnboarding } = useOnboarding();
+
+  const handleStartOnboarding = () => {
+    setHasCompletedOnboarding(false);
+    setIsOnboardingOpen(true);
+  };
 
   return (
     <div className="flex items-center justify-between p-4 border-b">
@@ -37,17 +45,47 @@ export function DashboardNav() {
               Map View
             </Button>
           </Link>
+          <Link href="/home">
+            <Button
+              variant={pathname === '/home' ? 'default' : 'ghost'}
+              size="sm"
+              className="gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+          </Link>
         </nav>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="gap-2"
-        onClick={() => signOut()}
-      >
-        <LogOut className="h-4 w-4" />
-        Sign Out
-      </Button>
+      <div className="flex items-center gap-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                onClick={handleStartOnboarding}
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span className="sr-only">Start Onboarding</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Start Onboarding</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+          onClick={() => signOut()}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
     </div>
   );
 } 
