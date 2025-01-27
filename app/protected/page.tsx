@@ -8,11 +8,12 @@ import { WeatherData } from '@/types/weather';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Map } from 'lucide-react';
+import { Map, RefreshCw } from 'lucide-react';
 import { RiskAssessment } from '@/components/dashboard/risk-assessment';
 import { SiteFilterProvider } from '@/contexts/site-filter-context';
 import { SiteFilters } from '@/components/dashboard/site-filters';
 import { Card } from '@/components/ui/card';
+import { format } from 'date-fns';
 
 export default function ProtectedPage() {
   const [sites, setSites] = useState<DashboardSiteData[]>([]);
@@ -24,6 +25,8 @@ export default function ProtectedPage() {
     risk: true
   });
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const dashboardService = new DashboardService();
 
@@ -36,8 +39,10 @@ export default function ProtectedPage() {
 
   const loadDashboardData = async () => {
     try {
+      setIsRefreshing(true);
       const data = await dashboardService.getDashboardData();
       setSites(data);
+      setLastUpdated(new Date());
       
       // Progressive loading of data-dependent components
       setTimeout(() => setLoadingStates(prev => ({ ...prev, filters: false })), 300);
@@ -46,6 +51,14 @@ export default function ProtectedPage() {
     } catch (err) {
       console.error('Error loading dashboard data:', err);
       setError('Failed to load dashboard data. Please try again later.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    if (!isRefreshing) {
+      loadDashboardData();
     }
   };
 
@@ -74,19 +87,34 @@ export default function ProtectedPage() {
   return (
     <SiteFilterProvider sites={sites}>
       <div className="container mx-auto p-8 space-y-8">
-        <div className="flex flex-col sm:flex-row gap-2 justify-between items-center">
-          <div className="space-y-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Monitor weather conditions and alerts across all your project sites
-            </p>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button asChild size="sm" variant="default" className="gap-2">
+                <Link href="/map">
+                  <Map className="h-4 w-4" />
+                  Project Site Map
+                </Link>
+              </Button>
+            </div>
           </div>
-          <Button asChild size="lg" className="gap-2 w-full mt-4 sm:w-auto sm:mt-0">
-            <Link href="/map">
-              <Map className="h-5 w-5" />
-              Project Site Map
-            </Link>
-          </Button>
+          <p className="text-muted-foreground">
+            Monitor weather conditions and alerts across all your project sites
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Last updated: {format(lastUpdated, 'h:mm a')}
+          </p>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[300px,1fr]">
