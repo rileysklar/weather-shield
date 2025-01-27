@@ -1,74 +1,46 @@
-import { signOutAction } from "@/app/actions";
-import { hasEnvVars } from "@/utils/supabase/check-env-vars";
-import Link from "next/link";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import { createClient } from "@/utils/supabase/server";
-import { LogOut } from "lucide-react";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+'use client';
 
-export default async function AuthButton() {
-  const supabase = await createClient();
+import { createClient } from '@/utils/supabase/client';
+import { useEffect, useState } from 'react';
+import { Button } from './ui/button';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { signOutAction } from '@/app/actions';
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function HeaderAuth() {
+  const supabase = createClient();
+  const [user, setUser] = useState<any>(null);
 
-  if (!hasEnvVars) {
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+    };
+    getUser();
+  }, []);
+
+  if (!user) {
     return (
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div>
-          <Badge
-            variant={"default"}
-            className="font-normal pointer-events-none text-xs sm:text-sm"
-          >
-            Please update .env.local file with anon key and url
-          </Badge>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            asChild
-            size="sm"
-            variant={"outline"}
-            disabled
-            className="opacity-75 cursor-none pointer-events-none"
-          >
-            <Link href="/sign-in">Sign in</Link>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            variant={"default"}
-            disabled
-            className="opacity-75 cursor-none pointer-events-none"
-          >
-            <Link href="/sign-up">Sign up</Link>
-          </Button>
-        </div>
+      <div className="flex items-center gap-4">
+        <Button asChild variant="ghost" size="sm">
+          <a href="/sign-in">Sign In</a>
+        </Button>
+        <Button asChild size="sm">
+          <a href="/sign-up">Sign Up</a>
+        </Button>
       </div>
     );
   }
   return user ? (
-    <div className="flex items-center gap-1 sm:gap-4 bg-glass backdrop-blur-sm border border-foreground/10 px-2 py-1 rounded-md">
+    <div className="flex items-center gap-4">
       <Avatar className="h-8 w-8">
         <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
       </Avatar>
       <span className="text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px]">{user.email?.split('@')[0]}</span>
       <form action={signOutAction}>
-        <Button type="submit" variant={"outline"} size="sm" className="h-8 sm:h-9 bg-glass bg-[var(--border)]">
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline ml-2">Sign out</span>
+        <Button type="submit" variant={"outline"} size="sm" className="h-8 sm:h-9">
+          Sign out
         </Button>
       </form>
     </div>
-  ) : (
-    <div className="flex gap-2">
-      <Button asChild size="sm" variant={"outline"} className="h-8 sm:h-9">
-        <Link href="/sign-in">Sign in</Link>
-      </Button>
-      <Button asChild size="sm" variant={"default"} className="h-8 sm:h-9">
-        <Link href="/sign-up">Sign up</Link>
-      </Button>
-    </div>
-  );
+  ) : null;
 }

@@ -37,7 +37,7 @@ const TypewriterEffect = () => {
 
   return (
     <motion.div
-      className="relative inline-flex black-ops text-blue-500 align-baseline"
+      className="relative inline-flex black-ops text-blue-500 align-[3px] sm:align-baseline"
       style={{
         width: Math.max(...words.map(word => word.length)) + 'ch',
         height: '1.2em',
@@ -63,7 +63,7 @@ const IrregularPolygon = () => (
     <div className="absolute -top-6 left-12  whitespace-nowrap bg-red-500/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-md animate-pulse">
       Alert: Hail Imminent
     </div>
-    <svg width="100" height="100" viewBox="0 0 100 100" className="transform rotate-6">
+    <svg width="100" height="100" viewBox="0 0 100 100" className="transform ml-6 rotate-6">
       <polygon
         points="15,25 70,20 85,30 80,70 75,75 65,80 25,75 20,65"
         className="fill-none stroke-blue-400 stroke-2"
