@@ -78,8 +78,7 @@ interface GridpointForecast {
 
 export class WeatherService {
   private static headers = {
-    'User-Agent': '(weather-shield.com, contact@weather-shield.com)',
-    'Accept': 'application/geo+json',
+    'Accept': 'application/json',
     'Content-Type': 'application/json'
   };
 
@@ -88,13 +87,14 @@ export class WeatherService {
     next: { revalidate: 300 } // Cache for 5 minutes
   };
 
-  private static async fetchWithTimeout(url: string): Promise<Response> {
+  private static async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
       const response = await fetch(url, {
         ...this.fetchOptions,
+        ...options,
         signal: controller.signal
       });
 
@@ -127,29 +127,35 @@ export class WeatherService {
       }
 
       try {
-        const response = await this.fetchWithTimeout(
-          `https://api.weather.gov/points/${lat.toFixed(4)},${lon.toFixed(4)}`
-        );
+        const response = await this.fetchWithTimeout('/api/weather', {
+          method: 'POST',
+          body: JSON.stringify({ lat, lng: lon })
+        });
         
-        if (response.status === 404) {
-          console.log('Location outside US, using OpenWeather fallback');
-          await this.validateOpenWeatherConfig();
-          return this.getOpenWeatherPoint();
-        }
-
         const data = await response.json();
 
-        // Validate response data
-        if (!data.properties?.forecast) {
-          console.log('Invalid NOAA data, using OpenWeather fallback');
-          await this.validateOpenWeatherConfig();
+        // If the response indicates we're using OpenWeather
+        if (data.location?.gridId === 'openweather') {
           return this.getOpenWeatherPoint();
         }
 
-        return data;
+        // Convert the response to WeatherPoint format
+        return {
+          properties: {
+            forecast: data.location?.gridId ? 
+              `https://api.weather.gov/gridpoints/${data.location.gridId}/${data.location.gridX},${data.location.gridY}/forecast` : 
+              'openweather',
+            forecastHourly: data.location?.gridId ?
+              `https://api.weather.gov/gridpoints/${data.location.gridId}/${data.location.gridX},${data.location.gridY}/forecast/hourly` :
+              'openweather',
+            gridId: data.location?.gridId || 'openweather',
+            gridX: data.location?.gridX || -1,
+            gridY: data.location?.gridY || -1
+          }
+        };
       } catch (error) {
-        // If NOAA request fails for any reason, use OpenWeather as fallback
-        console.log('NOAA request failed, using OpenWeather fallback');
+        // If server request fails, use OpenWeather as fallback
+        console.log('Server request failed, using OpenWeather fallback');
         await this.validateOpenWeatherConfig();
         return this.getOpenWeatherPoint();
       }
@@ -216,19 +222,30 @@ export class WeatherService {
         };
       }
 
-      // Original NOAA forecast logic
-      if (!forecastUrl.startsWith('https://api.weather.gov/')) {
-        throw new Error('Invalid forecast URL');
-      }
+      // Use server endpoint for weather.gov data
+      const response = await this.fetchWithTimeout('/api/weather', {
+        method: 'GET',
+        headers: {
+          ...this.headers,
+          'Content-Type': 'application/json',
+        },
+        next: { revalidate: 300 }, // Cache for 5 minutes
+        ...(lat !== undefined && lon !== undefined ? {
+          params: new URLSearchParams({ lat: lat.toString(), lng: lon.toString() })
+        } : {})
+      });
 
-      const response = await this.fetchWithTimeout(forecastUrl);
       const data = await response.json();
 
-      if (!data.properties?.periods?.length) {
+      if (!data.forecast) {
         throw new Error('Invalid forecast data received');
       }
 
-      return data;
+      return {
+        properties: {
+          periods: data.forecast
+        }
+      };
     } catch (error) {
       console.error('Error fetching forecast:', error);
       throw new Error('Failed to fetch forecast');
@@ -245,9 +262,10 @@ export class WeatherService {
         throw new Error('Invalid grid parameters');
       }
 
-      const response = await this.fetchWithTimeout(
-        `https://api.weather.gov/gridpoints/${gridId}/${gridX},${gridY}`
-      );
+      const response = await this.fetchWithTimeout('/api/weather/gridpoint', {
+        method: 'POST',
+        body: JSON.stringify({ gridId, gridX, gridY })
+      });
       
       const data = await response.json();
 
