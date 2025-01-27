@@ -269,332 +269,352 @@ export function Sidebar({
         </CardHeader>
 
         {isOpen && (
-          <CardContent className="flex-1 flex flex-col overflow-hidden p-4 relative">
-            <ScrollArea className="h-[calc(100%-100px)] -mr-4 pr-4">
-              <div className="space-y-4">
-                {/* Project Sites Section */}
-                <Tabs defaultValue="list" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="list">Sites ({projectSites.length})</TabsTrigger>
-                    <TabsTrigger value="create">Create</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="list" className="mt-4">
-                    <Accordion type="single" collapsible>
-                      <AccordionItem value="sites">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">Project Sites</h3>
-                            <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
-                              {projectSites.length}
-                            </Badge>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-2">
-                            {projectSites.map((site) => (
-                              <Card key={site.id} className="p-4">
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    {editingSiteId === site.id ? (
-                                      <Input
-                                        value={editingName}
-                                        onChange={(e) => setEditingName(e.target.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') handleSaveEdit();
-                                          if (e.key === 'Escape') setEditingSiteId(null);
-                                        }}
-                                        className="h-8 flex-1 mr-2"
-                                        autoFocus
-                                      />
-                                    ) : (
-                                      <button
-                                        onClick={() => onProjectSiteSelect?.(site)}
-                                        className="text-lg font-semibold hover:text-primary transition-colors text-left w-full"
-                                      >
-                                        {site.name}
-                                      </button>
-                                    )}
-                                  </div>
-                                  {editingSiteId === site.id ? (
-                                    <>
-                                      <Input
-                                        value={editingDescription}
-                                        onChange={(e) => setEditingDescription(e.target.value)}
-                                        placeholder="Description"
-                                        className="h-8 w-full text-sm"
-                                      />
-                                      <select
-                                        value={editingType}
-                                        onChange={(e) => setEditingType(e.target.value)}
-                                        className="h-8 w-full text-xs rounded-md border border-input bg-background px-3"
-                                      >
-                                        {PROJECT_TYPES.map(type => (
-                                          <option key={type.value} value={type.value}>
-                                            {type.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {site.description && (
-                                        <p className="text-sm text-muted-foreground">{site.description}</p>
-                                      )}
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <Badge variant="outline" className="text-xs">
-                                            {formatSiteType(site.type)}
-                                          </Badge>
-                                          <RiskIndicator site={site} alerts={siteAlerts} />
-                                        </div>
-                                        <div className="flex gap-1 shrink-0">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleStartEdit(site)}
-                                            className="h-6 w-6 p-0"
-                                          >
-                                            <Pencil className="h-3 w-3" />
-                                          </Button>
-                                          <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 w-6 p-0 hover:text-destructive"
-                                              >
-                                                <Trash2 className="h-3 w-3" />
-                                              </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                              <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete Project Site</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  Are you sure you want to delete this project site? This action cannot be undone.
-                                                </AlertDialogDescription>
-                                              </AlertDialogHeader>
-                                              <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                  onClick={() => onProjectSiteDelete?.(site.id)}
-                                                  className="bg-destructive hover:bg-destructive/90"
-                                                >
-                                                  Delete
-                                                </AlertDialogAction>
-                                              </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                          </AlertDialog>
-                                        </div>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </TabsContent>
-                  <TabsContent value="create" className="mt-4">
-                    {showProjectForm ? (
-                      <div className="space-y-4">
-                        <ProjectSiteForm onSubmit={onProjectDetailsSubmit} />
-                        <Button 
-                          variant="outline" 
-                          className="w-full" 
-                          onClick={onCancelProjectSite}
-                        >
-                          <X className="mr-2 h-4 w-4" />
-                          Cancel Project Site
-                        </Button>
-                      </div>
-                    ) : isDrawingMode ? (
-                      <div className="space-y-4">
-                        <Card className="p-4 border-2 border-primary animate-pulse">
-                          <p className="text-sm text-muted-foreground">
-                            Draw a polygon on the map to define your project site area
-                          </p>
-                        </Card>
-                        <Button 
-                          variant="outline" 
-                          className="w-full" 
-                          onClick={onCancelProjectSite}
-                        >
-                          <X className="mr-2 h-4 w-4" />
-                          Cancel Drawing
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <Button
-                          variant="default"
-                          size="lg"
-                          className="w-full"
-                          onClick={onDrawingModeToggle}
-                        >
-                          Create Project Site
-                        </Button>
-                        <PolygonCoordinates onClear={onClearPolygon} />
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-
-                {/* Weather Alerts Section */}
-                <AlertsAccordion 
-                  projectSites={projectSites} 
-                  onAlertsChange={setSiteAlerts}
-                />
-
-                {/* Weather Conditions Section */}
-                {weatherData && (
-                  <>
-                    {loading ? (
-                      <LoadingSkeleton />
-                    ) : (
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="conditions">
+          <>
+            <CardContent className="flex-1 flex flex-col overflow-hidden p-4">
+              <ScrollArea className="flex-1">
+                <div className="space-y-4 pr-4">
+                  {/* Project Sites Section */}
+                  <Tabs defaultValue="list" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="list">Sites ({projectSites.length})</TabsTrigger>
+                      <TabsTrigger value="create">Create</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="list" className="mt-4">
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value="sites">
                           <AccordionTrigger className="hover:no-underline">
-                            <div className="flex flex-col items-start gap-1 flex-1">
-                              {location?.projectSiteId && (
-                                <h3 className="text-lg font-semibold">
-                                  {projectSites.find(site => site.id === location.projectSiteId)?.name}
-                                </h3>
-                              )}
-                              <p className="text-md text-muted-foreground">
-                                {location?.name || `${location?.lat.toFixed(4)}, ${location?.lng.toFixed(4)}`}
-                              </p>
-                              <p className="text-xs text-muted-foreground">Current Conditions</p>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">Project Sites</h3>
+                              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
+                                {projectSites.length}
+                              </Badge>
                             </div>
                           </AccordionTrigger>
                           <AccordionContent>
-                            <div className="space-y-4 pt-2">
-                              {/* Current Conditions */}
-                              <div className="grid grid-cols-2 gap-3">
-                                <Card>
-                                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <div className="flex items-center gap-3">
-                                      <Thermometer className="h-6 w-6" />
-                                      <span className="text-xs font-medium uppercase tracking-wide">Temp</span>
-                                    </div>
-                                    <p className="text-xs font-medium uppercase tracking-wide">{weatherData.forecast[0].temperature}°{weatherData.forecast[0].temperatureUnit}</p>
-                                  </CardHeader>
-                                </Card>
-                                <Card>
-                                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <div className="flex items-center gap-3">
-                                      <Wind className="h-6 w-6" />
-                                      <span className="text-xs font-medium uppercase tracking-wide">Wind</span>
-                                    </div>
-                                    <p className="text-xs font-medium uppercase tracking-wide">{weatherData.forecast[0].windSpeed}</p>
-                                  </CardHeader>
-                                </Card>
-                              </div>
-
-                              {/* Temperature Chart */}
-                              <Card className="p-4">
-                                <TemperatureChart forecast={weatherData.forecast} />
-                              </Card>
-
-                              {/* Forecast Periods */}
-                              <div className="space-y-2">
-                                {weatherData.forecast.map((period) => (
-                                  <Card key={period.number} className="p-4">
+                            <div className="space-y-2">
+                              {projectSites.map((site) => (
+                                <Card key={site.id} className="p-4">
+                                  <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3">
-                                        {getWeatherIcon(period.shortForecast)}
-                                        <div>
-                                          <p className="font-medium">{period.name}</p>
-                                          <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
-                                        </div>
-                                      </div>
-                                      <p className="font-medium">{period.temperature}°{period.temperatureUnit}</p>
+                                      {editingSiteId === site.id ? (
+                                        <Input
+                                          value={editingName}
+                                          onChange={(e) => setEditingName(e.target.value)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSaveEdit();
+                                            if (e.key === 'Escape') setEditingSiteId(null);
+                                          }}
+                                          className="h-8 flex-1 mr-2"
+                                          autoFocus
+                                        />
+                                      ) : (
+                                        <button
+                                          onClick={() => onProjectSiteSelect?.(site)}
+                                          className="text-lg font-semibold hover:text-primary transition-colors text-left w-full"
+                                        >
+                                          {site.name}
+                                        </button>
+                                      )}
                                     </div>
-                                  </Card>
-                                ))}
-                              </div>
+                                    {editingSiteId === site.id ? (
+                                      <>
+                                        <Input
+                                          value={editingDescription}
+                                          onChange={(e) => setEditingDescription(e.target.value)}
+                                          placeholder="Description"
+                                          className="h-8 w-full text-sm"
+                                        />
+                                        <select
+                                          value={editingType}
+                                          onChange={(e) => setEditingType(e.target.value)}
+                                          className="h-8 w-full text-xs rounded-md border border-input bg-background px-3"
+                                        >
+                                          {PROJECT_TYPES.map(type => (
+                                            <option key={type.value} value={type.value}>
+                                              {type.label}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {site.description && (
+                                          <p className="text-sm text-muted-foreground">{site.description}</p>
+                                        )}
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {formatSiteType(site.type)}
+                                            </Badge>
+                                            <RiskIndicator site={site} alerts={siteAlerts} />
+                                          </div>
+                                          <div className="flex gap-1 shrink-0">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => handleStartEdit(site)}
+                                              className="h-6 w-6 p-0"
+                                            >
+                                              <Pencil className="h-3 w-3" />
+                                            </Button>
+                                            <AlertDialog>
+                                              <AlertDialogTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 w-6 p-0 hover:text-destructive"
+                                                >
+                                                  <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                              </AlertDialogTrigger>
+                                              <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                  <AlertDialogTitle>Delete Project Site</AlertDialogTitle>
+                                                  <AlertDialogDescription>
+                                                    Are you sure you want to delete this project site? This action cannot be undone.
+                                                  </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                  <AlertDialogAction
+                                                    onClick={() => onProjectSiteDelete?.(site.id)}
+                                                    className="bg-destructive hover:bg-destructive/90"
+                                                  >
+                                                    Delete
+                                                  </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                              </AlertDialogContent>
+                                            </AlertDialog>
+                                          </div>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </Card>
+                              ))}
                             </div>
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
-                    )}
-                  </>
-                )}
+                    </TabsContent>
+                    <TabsContent value="create" className="mt-4">
+                      {showProjectForm ? (
+                        <div className="space-y-4">
+                          <ProjectSiteForm onSubmit={onProjectDetailsSubmit} />
+                          <Button 
+                            variant="outline" 
+                            className="w-full" 
+                            onClick={onCancelProjectSite}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel Project Site
+                          </Button>
+                        </div>
+                      ) : isDrawingMode ? (
+                        <div className="space-y-4">
+                          <Card className="p-4 border-2 border-primary animate-pulse">
+                            <p className="text-sm text-muted-foreground">
+                              Draw a polygon on the map to define your project site area
+                            </p>
+                          </Card>
+                          <Button 
+                            variant="outline" 
+                            className="w-full" 
+                            onClick={onCancelProjectSite}
+                          >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel Drawing
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <Button
+                            variant="default"
+                            size="lg"
+                            className="w-full"
+                            onClick={onDrawingModeToggle}
+                          >
+                            Create Project Site
+                          </Button>
+                          <PolygonCoordinates onClear={onClearPolygon} />
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+
+                  {/* Weather Alerts Section */}
+                  <AlertsAccordion 
+                    projectSites={projectSites} 
+                    onAlertsChange={setSiteAlerts}
+                  />
+
+                  {/* Weather Conditions Section */}
+                  {weatherData && (
+                    <>
+                      {loading ? (
+                        <LoadingSkeleton />
+                      ) : (
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="conditions">
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex flex-col items-start gap-1 flex-1">
+                                {location?.projectSiteId && (
+                                  <h3 className="text-lg font-semibold">
+                                    {projectSites.find(site => site.id === location.projectSiteId)?.name}
+                                  </h3>
+                                )}
+                                <p className="text-md text-muted-foreground">
+                                  {location?.name || `${location?.lat.toFixed(4)}, ${location?.lng.toFixed(4)}`}
+                                </p>
+                                <p className="text-xs text-muted-foreground">Current Conditions</p>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-4 pt-2">
+                                {/* Current Conditions */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <Card className="bg-card hover:bg-accent/40 transition-colors">
+                                    <CardHeader className="p-3">
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Thermometer className="h-4 w-4 text-muted-foreground" />
+                                          <span className="text-xs font-medium text-muted-foreground">TEMPERATURE</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-2xl font-bold">{weatherData.forecast[0].temperature}</span>
+                                          <span className="text-sm font-medium text-muted-foreground">°{weatherData.forecast[0].temperatureUnit}</span>
+                                        </div>
+                                      </div>
+                                    </CardHeader>
+                                  </Card>
+                                  <Card className="bg-card hover:bg-accent/40 transition-colors">
+                                    <CardHeader className="p-3">
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Wind className="h-4 w-4 text-muted-foreground" />
+                                          <span className="text-xs font-medium text-muted-foreground">WIND SPEED</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-2xl font-bold">{weatherData.forecast[0].windSpeed.replace(' mph', '')}</span>
+                                          <span className="text-sm font-medium text-muted-foreground">MPH</span>
+                                        </div>
+                                      </div>
+                                    </CardHeader>
+                                  </Card>
+                                </div>
+
+                                {/* Temperature Chart */}
+                                <Card className="p-4">
+                                  <TemperatureChart forecast={weatherData.forecast} />
+                                </Card>
+
+                                {/* Forecast Periods */}
+                                <div className="space-y-2">
+                                  {weatherData.forecast.map((period) => (
+                                    <Card key={period.number} className="p-4">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                          {getWeatherIcon(period.shortForecast)}
+                                          <div>
+                                            <p className="font-medium">{period.name}</p>
+                                            <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
+                                          </div>
+                                        </div>
+                                        <p className="font-medium">{period.temperature}°{period.temperatureUnit}</p>
+                                      </div>
+                                    </Card>
+                                  ))}
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      )}
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+
+            <div className="p-4 border-t bg-background">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const url = await projectSiteService.downloadProjectSites();
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'project-sites.json';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (error) {
+                        console.error('Error downloading sites:', error);
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Export Sites
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = '.json';
+                      input.onchange = async (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          try {
+                            await projectSiteService.uploadProjectSites(file);
+                            window.location.reload();
+                          } catch (error) {
+                            console.error('Error uploading sites:', error);
+                          }
+                        }
+                      };
+                      input.click();
+                    }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Import Sites
+                  </Button>
+                </div>
+                <Button 
+                  asChild 
+                  variant="outline"
+                  size="default"
+                  className="w-full"
+                >
+                  <Link href="/protected">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Dashboard
+                  </Link>
+                </Button>
               </div>
-            </ScrollArea>
-          </CardContent>
+            </div>
+          </>
         )}
 
-        <div className="absolute bottom-4 left-4 right-4 space-y-2">
-          {isOpen && (
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const url = await projectSiteService.downloadProjectSites();
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'project-sites.json';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  } catch (error) {
-                    console.error('Error downloading sites:', error);
-                  }
-                }}
-                className="flex items-center justify-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Export Sites
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.json';
-                  input.onchange = async (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) {
-                      try {
-                        await projectSiteService.uploadProjectSites(file);
-                        // Refresh the project sites list
-                        window.location.reload();
-                      } catch (error) {
-                        console.error('Error uploading sites:', error);
-                      }
-                    }
-                  };
-                  input.click();
-                }}
-                className="flex items-center justify-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Import Sites
-              </Button>
-            </div>
-          )}
-          <Button 
-            asChild 
-            variant="outline"
-            size={isOpen ? "default" : "sm"}
-            className={cn(
-              "transition-all duration-300 w-full",
-              !isOpen && "w-8 h-8 mx-auto p-0"
-            )}
-          >
-            <Link href="/protected">
-              <ArrowLeft className={cn(
-                "h-4 w-4",
-                isOpen && "mr-2"
-              )} />
-              {isOpen && "Back to Dashboard"}
-            </Link>
-          </Button>
-        </div>
+        {!isOpen && (
+          <div className="absolute bottom-4 left-4 right-4">
+            <Button 
+              asChild 
+              variant="outline"
+              size="sm"
+              className="w-8 h-8 mx-auto p-0"
+            >
+              <Link href="/protected">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   );

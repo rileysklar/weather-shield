@@ -29,14 +29,16 @@ export class DashboardService {
       // Get all project sites
       const sites = await this.projectSiteService.getProjectSites();
       
-      // Update weather data for all sites
-      await this.weatherUpdateService.updateAllSites();
-      
-      // Get latest weather data for each site
+      // Get latest weather data for each site without updating
       const dashboardData = await Promise.all(
         sites.map(async (site) => {
           try {
             const latestWeather = await this.projectSiteService.getLatestWeatherData(site.id);
+            
+            // If weather data is more than 15 minutes old, trigger background update
+            if (latestWeather && new Date().getTime() - new Date(latestWeather.timestamp).getTime() > 15 * 60 * 1000) {
+              this.weatherUpdateService.updateWeatherForSite(site).catch(console.error);
+            }
             
             return {
               id: site.id,
@@ -77,17 +79,23 @@ export class DashboardService {
 
   async getSiteWeatherHistory(siteId: string, days: number = 7): Promise<WeatherData[]> {
     try {
-      // Update weather data for this site first
-      const site = await this.projectSiteService.getProjectSite(siteId);
-      if (site) {
-        await this.weatherUpdateService.updateWeatherForSite(site);
-      }
-
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      return await this.projectSiteService.getWeatherHistory(siteId, startDate, endDate);
+      // Get the weather history without updating
+      const history = await this.projectSiteService.getWeatherHistory(siteId, startDate, endDate);
+
+      // If the latest data is more than 15 minutes old, trigger a background update
+      const latestData = history[history.length - 1];
+      if (latestData && new Date().getTime() - new Date(latestData.timestamp).getTime() > 15 * 60 * 1000) {
+        const site = await this.projectSiteService.getProjectSite(siteId);
+        if (site) {
+          this.weatherUpdateService.updateWeatherForSite(site).catch(console.error);
+        }
+      }
+
+      return history;
     } catch (error) {
       console.error(`Error fetching weather history for site ${siteId}:`, error);
       throw error;

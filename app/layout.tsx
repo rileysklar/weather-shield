@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { FileText, Menu, Home, Shield, PieChart, Map, HelpCircle } from "lucide-react";
-import MobileNav from "@/components/mobile-nav";
 import {
   Sheet,
   SheetContent,
@@ -148,7 +147,6 @@ export default function RootLayout({
                 </div>
               </nav>
 
-              {/* <MobileNav /> */}
               <div className="relative flex-1">
                 {children}
               </div>

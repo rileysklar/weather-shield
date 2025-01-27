@@ -1,3 +1,5 @@
+'use client';
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +23,7 @@ export function SiteFilters() {
   const { state, dispatch, filteredSites } = useSiteFilter();
 
   const handleClearSearch = () => {
-    dispatch({ type: 'SET_SEARCH_QUERY', payload: '' });
+    dispatch({ type: 'SET_SEARCH', payload: '' });
   };
 
   return (
@@ -32,11 +34,11 @@ export function SiteFilters() {
           <Input
             type="search"
             placeholder="Search sites..."
-            value={state.searchQuery}
-            onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })}
+            value={state.search}
+            onChange={(e) => dispatch({ type: 'SET_SEARCH', payload: e.target.value })}
             className="w-full"
           />
-          {state.searchQuery && (
+          {state.search && (
             <Button
               variant="ghost"
               size="sm"
@@ -58,7 +60,7 @@ export function SiteFilters() {
             {RISK_LEVELS.map((level) => (
               <Badge
                 key={level}
-                variant={state.riskLevel.includes(level) ? 'default' : 'outline'}
+                variant={state.riskLevels.includes(level) ? 'default' : 'outline'}
                 className="cursor-pointer"
                 onClick={() => dispatch({ type: 'TOGGLE_RISK_LEVEL', payload: level })}
               >
@@ -119,7 +121,7 @@ export function SiteFilters() {
         </div>
 
         {/* Reset Filters */}
-        {(state.searchQuery || state.riskLevel.length > 0 || 
+        {(state.search || state.riskLevels.length > 0 || 
           state.weatherConditions.length > 0 || state.hasActiveAlerts !== null) && (
           <Button
             variant="ghost"
