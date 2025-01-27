@@ -27,6 +27,9 @@ export const authConfig = {
   pages: {
     signIn: "/sign-in",
   },
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
@@ -46,11 +49,16 @@ export const authConfig = {
 
       return true
     },
-    jwt({ token, user }) {
-      if (user) token.user = user
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session?.name) {
+        token.name = session.name
+      }
+      if (user) {
+        token.user = user
+      }
       return token
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       session.user = token.user as any
       return session
     }
