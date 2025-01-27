@@ -95,10 +95,10 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
       .setLngLat([location.lng, location.lat])
       .addTo(map.current);
 
-    // Fly to location
+    // Fly to location with second strongest zoom level
     map.current.flyTo({
       center: [location.lng, location.lat],
-      zoom: 10,
+      zoom: 14,
       essential: true
     });
 
@@ -419,10 +419,10 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     // Get the center point of the polygon for weather data
     const [lng, lat] = calculatePolygonCenter(site.coordinates);
     
-    // Fly to the location
+    // Fly to the location with second strongest zoom level
     map.current.flyTo({
       center: [lng, lat],
-      zoom: 12,
+      zoom: 14,
       essential: true
     });
 
