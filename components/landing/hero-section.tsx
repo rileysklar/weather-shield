@@ -4,6 +4,59 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Cloud, Shield, Sun, CloudSnow, CloudRain, CloudHail } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useAnimate } from "framer-motion";
+
+const words = ["Assets", "Energy", "Future"];
+
+const TypewriterEffect = () => {
+  const [currentWord, setCurrentWord] = useState(0);
+  const [currentText, setCurrentText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = words[currentWord];
+    const timeout = setTimeout(() => {
+      if (!isDeleting) {
+        if (currentText.length < word.length) {
+          setCurrentText(word.slice(0, currentText.length + 1));
+        } else {
+          setTimeout(() => setIsDeleting(true), 1500);
+        }
+      } else {
+        if (currentText.length === 0) {
+          setIsDeleting(false);
+          setCurrentWord((prev) => (prev + 1) % words.length);
+        } else {
+          setCurrentText(word.slice(0, currentText.length - 1));
+        }
+      }
+    }, isDeleting ? 100 : 150);
+
+    return () => clearTimeout(timeout);
+  }, [currentText, isDeleting, currentWord]);
+
+  return (
+    <motion.div
+      className="relative inline-flex black-ops text-blue-500 align-baseline"
+      style={{
+        width: Math.max(...words.map(word => word.length)) + 'ch',
+        height: '1.2em',
+        transform: 'translateY(0.4em)'
+      }}
+      initial={{ opacity: 1 }}
+    >
+      <span className="absolute whitespace-pre">{currentText}</span>
+      <motion.span
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
+        className="absolute left-[calc(0ch+var(--cursor-offset))] inline-block w-[4px] h-[1em] bg-current align-middle"
+        style={{
+          '--cursor-offset': `${currentText.length - .0}ch`
+        } as any}
+      />
+    </motion.div>
+  );
+};
 
 const IrregularPolygon = () => (
   <div className="relative">
@@ -51,11 +104,12 @@ export function HeroSection() {
     <div className="relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800" />
-      <div className="absolute inset-0 bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-20" />
+      <div className="absolute inset-0 bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] opacity-60 dark:opacity-20" />
+      <div className="absolute inset-0 bg-[url('/map.svg')] bg-cover bg-center bg-no-repeat opacity-10 mix-blend-multiply dark:mix-blend-soft-light" />
       
       <div className="relative container mx-auto px-4 py-24 sm:py-32">
         <div className="flex flex-col items-center text-center space-y-8">
-          {/* Floating Icons */}
+          {/* Floating Icons Container */}
           <div ref={containerRef} className="relative w-[400px] h-72 mb-8">
             {/* Shield Icon - Center */}
             <div 
@@ -85,20 +139,6 @@ export function HeroSection() {
               </div>
             </div>
             
-            {/* Cloud Icon - Bottom Left
-            <div 
-              className="absolute left-12 bottom-16 transition-transform duration-1000 ease-out"
-              style={{ 
-                transform: calculateTransform(0, 0, 0.3),
-                willChange: 'transform'
-              }}
-            >
-              <div className="relative">
-                <div className="absolute inset-0 bg-gray-400/20 rounded-full blur-lg animate-pulse" />
-                <Cloud className="h-16 w-16 text-gray-400 animate-float relative z-10" />
-              </div>
-            </div> */}
-
             {/* Snow Icon - Top Left */}
             <div 
               className="absolute left-16 top-12 transition-transform duration-[1500ms] ease-out"
@@ -157,7 +197,9 @@ export function HeroSection() {
           </div>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl pretty font-extrabold tracking-tight max-w-3xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-200 dark:to-white bg-clip-text text-transparent">
-            Protect Your Energy from Weather Risks
+            Protect Your {' '}
+            <TypewriterEffect />
+           <br></br>from Weather Risks
           </h1>
           
           <p className="text-xl text-muted-foreground max-w-2xl">
