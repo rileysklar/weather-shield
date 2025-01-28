@@ -105,7 +105,7 @@ export class ProjectSiteService {
       }
 
       // If there's an existing entry less than 15 minutes old, update it instead of creating a new one
-      if (existingData && 
+      if (existingData && existingData.timestamp &&
           new Date().getTime() - new Date(existingData.timestamp).getTime() < 15 * 60 * 1000) {
         const { data: updatedData, error: updateError } = await this.supabase
           .from('weather_data')
@@ -151,11 +151,17 @@ export class ProjectSiteService {
       .select('*')
       .eq('project_site_id', projectSiteId)
       .order('timestamp', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(1);
 
+    // If no data is found, return null instead of throwing an error
+    if (error && error.code === 'PGRST116') {
+      return null;
+    }
+    
     if (error) throw error;
-    return weatherData;
+    
+    // Return null if no data found, otherwise return the first item
+    return weatherData && weatherData.length > 0 ? weatherData[0] : null;
   }
 
   async getWeatherHistory(projectSiteId: string, startDate: Date, endDate: Date) {

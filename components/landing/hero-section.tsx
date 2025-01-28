@@ -104,7 +104,7 @@ export function HeroSection() {
     <div className="relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800" />
-      <div className="absolute inset-0 bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] opacity-60 dark:opacity-20" />
+      <div className="absolute inset-0 bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] opacity-50 dark:opacity-70 bg-cover" />
       <div className="absolute inset-0 bg-[url('/map.svg')] bg-cover bg-center bg-no-repeat opacity-10 mix-blend-multiply dark:mix-blend-soft-light" />
       
       <div className="relative container mx-auto px-4 py-24 sm:py-32">

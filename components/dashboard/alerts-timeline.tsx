@@ -80,7 +80,7 @@ export function AlertsTimeline({ sites }: AlertsTimelineProps) {
   };
 
   return (
-    <ScrollArea className="h-[200px] pr-4">
+    <ScrollArea className=" pr-4">
       <div className="space-y-4">
         {alerts.map(alert => (
           <div key={alert.id} className="space-y-2">

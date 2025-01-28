@@ -10,6 +10,9 @@ import { ProjectSiteForm, ProjectSiteDetails } from './project-site-form';
 import { ProjectSiteService } from '@/utils/services/project-site';
 import { useUser } from '@/lib/hooks/use-user';
 import { toast } from "@/components/ui/use-toast";
+import { WeatherUpdateService } from '@/utils/services/weather-update';
+import { Json } from '@/types/supabase';
+import { SiteType, ProjectSite } from '@/types/site';
 
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
@@ -32,18 +35,8 @@ async function reverseGeocode(lng: number, lat: number) {
 }
 
 interface MapComponentProps {
-  onProjectSiteCreate?: (coordinates: number[][], details: ProjectSiteDetails) => void;
+  onProjectSiteCreate?: (site: ProjectSite) => void;
 }
-
-interface ProjectSite {
-  id: string;
-  name: string;
-  description: string;
-  type: string;
-  coordinates: number[][];
-}
-
-type SiteType = 'solar_array' | 'wind_farm' | 'hydroelectric' | 'coal' | 'natural_gas' | 'nuclear' | 'geothermal' | 'biomass' | 'other';
 
 export default function MapComponent({ onProjectSiteCreate }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -54,13 +47,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [currentPolygon, setCurrentPolygon] = useState<number[][] | null>(null);
-  const [projectSites, setProjectSites] = useState<Array<{
-    id: string;
-    name: string;
-    description: string;
-    type: string;
-    coordinates: number[][];
-  }>>([]);
+  const [projectSites, setProjectSites] = useState<ProjectSite[]>([]);
   const polygonService = useRef<PolygonService | null>(null);
   const projectSiteService = useRef(new ProjectSiteService());
   const { user } = useUser();
@@ -107,7 +94,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         fetch('/api/weather', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lat: location.lat, lng: location.lng }),
+          body: JSON.stringify({ lat: location.lat, lon: location.lng }),
         }),
         reverseGeocode(location.lng, location.lat)
       ]);
@@ -242,7 +229,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
           properties: {
             id: site.id,
             name: site.name,
-            type: site.type
+            type: site.site_type
           },
           geometry: {
             type: 'Polygon',
@@ -335,56 +322,57 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     });
   };
 
-  const handleProjectDetailsSubmit = async (details: ProjectSiteDetails) => {
-    if (!currentPolygon || !user) return;
-    
+  const handleProjectSiteCreate = async (details: ProjectSiteDetails) => {
     try {
-      // Calculate center point for the polygon
+      if (!currentPolygon || !user) return;
+
       const [centerLng, centerLat] = calculatePolygonCenter(currentPolygon);
-      
-      // Create new project site in database
+
       const newSite = await projectSiteService.current.createProjectSite({
         name: details.name,
         description: details.description,
-        site_type: details.type as any, // Type matches our enum
+        site_type: details.type,
         coordinates: currentPolygon,
-        center_point: `(${centerLng},${centerLat})`, // PostgreSQL POINT format
+        center_point: `(${centerLng},${centerLat})`,
         user_id: user.id
       });
-      
+
+      const siteWithCorrectTypes: ProjectSite = {
+        ...newSite,
+        coordinates: currentPolygon,
+        site_type: details.type,
+        center_point: newSite.center_point || null,
+        created_at: newSite.created_at || null,
+        updated_at: newSite.updated_at || null
+      };
+
       // Add to local state
-      setProjectSites(prev => [...prev, newSite]);
-      
+      setProjectSites(prev => [...prev, siteWithCorrectTypes]);
+
+      // Trigger initial weather update for the new site
+      const weatherUpdateService = new WeatherUpdateService();
+      weatherUpdateService.updateWeatherForSite(siteWithCorrectTypes).catch(error => {
+        console.error('Error updating weather for new site:', error);
+      });
+
       // Reset all states
-      onProjectSiteCreate?.(currentPolygon, details);
-      
-      // Clean up the polygon service
-      polygonService.current?.cleanup();
-      
-      // Create a new instance for next use
-      polygonService.current = new PolygonService();
-      
-      // Reset all states
-      setIsDrawingMode(false);
       setShowProjectForm(false);
       setCurrentPolygon(null);
-      
-      // Switch back to the list tab after creation
-      const listTab = document.querySelector('[value="list"]') as HTMLElement;
-      if (listTab) {
-        listTab.click();
-      }
-      
+      polygonService.current?.clearPolygon();
+
+      // Notify parent
+      onProjectSiteCreate?.(siteWithCorrectTypes);
+
       toast({
-        title: "Project Site Saved",
-        description: "Your project site has been created successfully",
+        title: "Success",
+        description: "Project site created successfully.",
       });
     } catch (error) {
-      console.error('Error saving project site:', error);
+      console.error('Error creating project site:', error);
       toast({
         title: "Error",
-        description: "Failed to save project site. Please try again.",
-        variant: "destructive",
+        description: "Failed to create project site. Please try again.",
+        variant: "destructive"
       });
     }
   };
@@ -486,12 +474,12 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
       const formattedUpdates = {
         ...updates,
         // If type is being updated, ensure it's a valid enum value
-        ...(updates.type && { site_type: updates.type as SiteType })
+        ...(updates.site_type && { site_type: updates.site_type as SiteType })
       };
 
       // Remove the type field as we're using site_type
-      if ('type' in formattedUpdates) {
-        delete formattedUpdates.type;
+      if ('site_type' in formattedUpdates) {
+        delete formattedUpdates.site_type;
       }
 
       await projectSiteService.current.updateProjectSite(siteId, formattedUpdates);
@@ -532,9 +520,6 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
           type: 'FeatureCollection',
           features: []
         });
-        
-        // Trigger the updatePolygons effect by forcing a re-render
-        setProjectSites(prev => [...prev]);
       }
       
       toast({
@@ -565,7 +550,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         onDrawingModeToggle={handleDrawingModeToggle}
         onPolygonComplete={handlePolygonComplete}
         showProjectForm={showProjectForm}
-        onProjectDetailsSubmit={handleProjectDetailsSubmit}
+        onProjectDetailsSubmit={handleProjectSiteCreate}
         onCancelProjectSite={handleCancelProjectSite}
         onProjectSiteNameEdit={handleProjectSiteNameEdit}
         onProjectSiteUpdate={handleProjectSiteUpdate}

@@ -18,7 +18,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { OnboardingButton } from "@/components/nav/onboarding-button";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 
@@ -44,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={geistSans.className} suppressHydrationWarning>
-      <body className="bg-background text-foreground">
+      <body className="text-foreground">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -52,42 +51,46 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <OnboardingProvider>
-            <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-200 via-gray-50/10 to-gray-200 dark:from-gray-900 dark:via-slate-800/20 dark:to-slate-900">
-              <div className="absolute inset-0 bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-90 bg-repeat" />
-              
-              <nav className="relative w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
+            <div className="fixed inset-0 bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-90 bg-cover pointer-events-none" />
+            <div className="relative min-h-screen flex flex-col">
+              <nav className="sticky top-0 z-40 w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
                 <div className="w-full flex justify-between items-center p-3 px-6 text-sm">
-                  <div className="flex gap-5 items-center font-semibold roboto">
-                    <Link href="/home" className="text-xl black-ops flex flex-row gap-2"> <Shield className="h-6 w-6" />Weather Shield</Link>
-                    {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center gap-4">
-                      <Link href="/home">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <Home className="h-4 w-4" />
-                          Home
-                        </Button>
-                      </Link>
-                      <Link href="/docs">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <FileText className="h-4 w-4" />
-                          Docs
-                        </Button>
-                      </Link>
-                      <OnboardingButton />
-                      <Link href="/protected">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <PieChart className="h-4 w-4" />
-                          Dashboard
-                        </Button>
-                      </Link>
-                      <Link href="/map">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <Map className="h-4 w-4" />
-                          Map
-                        </Button>
-                      </Link>
-                    </div>
+                  {/* Left section - Logo */}
+                  <div className="flex items-center">
+                    <Link href="/home" className="text-xl black-ops flex flex-row gap-2">
+                      <Shield className="h-6 w-6" />Weather Shield
+                    </Link>
                   </div>
+
+                  {/* Center section - Main Navigation */}
+                  <div className="hidden md:flex items-center gap-4 absolute left-1/2 -translate-x-1/2">
+                    <Link href="/home">
+                      <Button variant="ghost" size="sm" className="gap-2">
+                        <Home className="h-4 w-4" />
+                        Home
+                      </Button>
+                    </Link>
+                    <Link href="/docs">
+                      <Button variant="ghost" size="sm" className="gap-2">
+                        <FileText className="h-4 w-4" />
+                        Docs
+                      </Button>
+                    </Link>
+                    <Link href="/protected">
+                      <Button variant="ghost" size="sm" className="gap-2">
+                        <PieChart className="h-4 w-4" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Link href="/protected/map">
+                      <Button variant="ghost" size="sm" className="gap-2">
+                        <Map className="h-4 w-4" />
+                        Map
+                      </Button>
+                    </Link>
+                  </div>
+
+                  {/* Right section - Controls */}
                   <div className="flex items-center gap-4">
                     {/* Desktop Controls */}
                     <div className="hidden md:flex items-center gap-4">
@@ -104,9 +107,10 @@ export default function RootLayout({
                         </SheetTrigger>
                         <SheetContent>
                           <SheetHeader>
-                            <SheetTitle>Menu</SheetTitle>
+                            <SheetTitle className="text-start">Menu</SheetTitle>
                           </SheetHeader>
                           <div className="flex justify-start flex-col gap-4 mt-4">
+                        
                             <Link href="/home">
                               <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
                                 <Home className="h-4 w-4" />
@@ -114,27 +118,26 @@ export default function RootLayout({
                               </Button>
                             </Link>
                             <Link href="/protected">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <PieChart className="h-4 w-4" />
-                          Dashboard
-                        </Button>
-                      </Link>
-                      <Link href="/map">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <Map className="h-4 w-4" />
-                          Map
-                        </Button>
-                      </Link>
+                              <Button variant="ghost" size="sm" className="gap-2">
+                                <PieChart className="h-4 w-4" />
+                                Dashboard
+                              </Button>
+                            </Link>
+                            <Link href="/protected/map">
+                              <Button variant="ghost" size="sm" className="gap-2">
+                                <Map className="h-4 w-4" />
+                                Map
+                              </Button>
+                            </Link>
                             <Link href="/docs">
                               <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
                                 <FileText className="h-4 w-4" />
                                 Documentation
                               </Button>
                             </Link>
-                            <OnboardingButton className="w-full justify-start" />
                             <div className="flex items-center gap-2">
                               <ThemeSwitcher />
-                              <span className="text-sm">Theme</span>
+                              <span className="text-sm -ml-3">Theme</span>
                             </div>
                             <div className="pt-2 border-t">
                               {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
