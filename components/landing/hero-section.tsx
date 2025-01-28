@@ -107,10 +107,10 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] opacity-50 dark:opacity-70 bg-cover" />
       <div className="absolute inset-0 bg-[url('/map.svg')] bg-cover bg-center bg-no-repeat opacity-10 mix-blend-multiply dark:mix-blend-soft-light" />
       
-      <div className="relative container mx-auto px-4 py-24 sm:py-32">
+      <div className="relative container mx-auto px-4 pb-24 pt-8 sm:pt-16">
         <div className="flex flex-col items-center text-center space-y-8">
           {/* Floating Icons Container */}
-          <div ref={containerRef} className="relative w-[400px] h-72 mb-8">
+          <div ref={containerRef} className="relative w-[400px] h-72">
             {/* Shield Icon - Center */}
             <div 
               className="absolute w-12 h-12 left-1/2 top-1/3 transition-transform duration-700 ease-out"
