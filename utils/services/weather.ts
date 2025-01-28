@@ -87,32 +87,52 @@ export class WeatherService {
     next: { revalidate: 300 } // Cache for 5 minutes
   };
 
-  private static async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
+  static async fetchWithTimeout(url: string, options: RequestInit & { params?: Record<string, any> } = {}, timeout = 10000) {
     try {
-      const response = await fetch(url, {
-        ...this.fetchOptions,
-        ...options,
-        signal: controller.signal
+      const { params, ...fetchOptions } = options;
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      let fullUrl = `${baseUrl}${url}`;
+
+      // Add query parameters if provided
+      if (params) {
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            searchParams.append(key, value.toString());
+          }
+        });
+        fullUrl += `?${searchParams.toString()}`;
+      }
+
+      // Merge default headers with provided options
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers,
+      };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(fullUrl, {
+        ...fetchOptions,
+        headers,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
       }
 
       return response;
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Request timed out');
-        }
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
       }
       throw error;
-    } finally {
-      clearTimeout(timeoutId);
     }
   }
 
@@ -129,7 +149,7 @@ export class WeatherService {
       try {
         const response = await this.fetchWithTimeout('/api/weather', {
           method: 'POST',
-          body: JSON.stringify({ lat, lng: lon })
+          body: JSON.stringify({ lat, lon })
         });
         
         const data = await response.json();

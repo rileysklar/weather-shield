@@ -224,7 +224,7 @@ export function Sidebar({
 
   return (
     <Card className={cn(
-      "fixed top-20 left-4 bg-background border-border transition-all duration-300 ease-in-out z-10",
+      "fixed top-20 left-4 bg-background border-border transition-all duration-50 ease-in-out z-10",
       isOpen 
         ? "h-[calc(100vh-96px)] w-[calc(100%-36px)] sm:w-80" 
         : "h-28 sm:h-28 w-16",

@@ -35,9 +35,9 @@ export function DashboardNav() {
               Dashboard
             </Button>
           </Link>
-          <Link href="/map">
+          <Link href="/protected/map">
             <Button
-              variant={pathname === '/map' ? 'default' : 'ghost'}
+              variant={pathname === '/protected/map' ? 'default' : 'ghost'}
               size="sm"
               className="gap-2"
             >

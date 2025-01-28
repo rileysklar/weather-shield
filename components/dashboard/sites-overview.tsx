@@ -96,30 +96,21 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
   return (
     <div className="space-y-8">
       <Tabs defaultValue="all" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="all">All Sites ({filteredSites.length})</TabsTrigger>
+        <div className="overflow-auto pb-2 -mb-2">
+          <TabsList className="inline-flex sm:flex-wrap justify-start">
+            <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
+              All Sites ({filteredSites.length})
+            </TabsTrigger>
             {SEVERITY_LEVELS.map(({ value, label }) => (
-              <TabsTrigger key={value} value={value}>
+              <TabsTrigger 
+                key={value} 
+                value={value}
+                className="text-xs sm:text-sm whitespace-nowrap"
+              >
                 {label} ({sitesByRisk[value]?.length || 0})
               </TabsTrigger>
             ))}
           </TabsList>
-          
-          <Select
-            value={sitesPerPage.toString()}
-            onValueChange={handleSitesPerPageChange}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sites per page" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="6">6 per page</SelectItem>
-              <SelectItem value="9">9 per page</SelectItem>
-              <SelectItem value="12">12 per page</SelectItem>
-              <SelectItem value="15">15 per page</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         <TabsContent value="all" className="space-y-4">

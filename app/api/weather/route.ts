@@ -1,20 +1,30 @@
 import { NextResponse } from 'next/server';
 import { WeatherService } from '@/utils/services/weather';
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const { lat, lng } = await request.json();
-    
-    if (!lat || !lng) {
+    const { searchParams } = new URL(request.url);
+    const lat = searchParams.get('lat');
+    const lon = searchParams.get('lon');
+
+    if (!lat || !lon) {
       return NextResponse.json(
         { error: 'Latitude and longitude are required' },
         { status: 400 }
       );
     }
 
-    // Use getWeatherData which handles NOAA with OpenWeather fallback
-    const weatherData = await WeatherService.getWeatherData(lat, lng);
-    return NextResponse.json(weatherData);
+    const weatherData = await WeatherService.getWeatherData(
+      parseFloat(lat),
+      parseFloat(lon)
+    );
+
+    return NextResponse.json(weatherData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60'
+      }
+    });
   } catch (error) {
     console.error('Error fetching weather data:', error);
     return NextResponse.json(
@@ -24,21 +34,26 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const lat = parseFloat(searchParams.get('lat') || '');
-  const lng = parseFloat(searchParams.get('lng') || '');
-
-  if (isNaN(lat) || isNaN(lng)) {
-    return NextResponse.json(
-      { error: 'Latitude and longitude are required as query parameters' },
-      { status: 400 }
-    );
-  }
-
+export async function POST(request: Request) {
   try {
-    const weatherData = await WeatherService.getWeatherData(lat, lng);
-    return NextResponse.json(weatherData);
+    const body = await request.json();
+    const { lat, lon } = body;
+
+    if (!lat || !lon) {
+      return NextResponse.json(
+        { error: 'Latitude and longitude are required' },
+        { status: 400 }
+      );
+    }
+
+    const weatherData = await WeatherService.getWeatherData(lat, lon);
+
+    return NextResponse.json(weatherData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60'
+      }
+    });
   } catch (error) {
     console.error('Error fetching weather data:', error);
     return NextResponse.json(
