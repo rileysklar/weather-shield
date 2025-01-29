@@ -45,7 +45,7 @@ export interface ProcessedAlert {
 }
 
 export class NOAAService {
-  private static readonly BASE_URL = 'https://api.weather.gov';
+  private static readonly BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
   private static severityMap: { [key: string]: string } = {
     'Extreme': 'Extreme',
@@ -65,17 +65,43 @@ export class NOAAService {
 
   static async getAlertsForSite(site: { coordinates: number[][] }): Promise<ProcessedAlert[]> {
     try {
+      console.log('NOAAService - Fetching alerts for site coordinates:', site.coordinates);
+      
       // Get the center point of the polygon for the alert area
       const centerLat = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[1], 0) / site.coordinates.length;
       const centerLng = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[0], 0) / site.coordinates.length;
 
-      const response = await fetch(`${this.BASE_URL}/alerts/active?point=${centerLat},${centerLng}`);
-      if (!response.ok) throw new Error('Failed to fetch alerts');
+      console.log('NOAAService - Using base URL:', this.BASE_URL);
+      const response = await fetch(`${this.BASE_URL}/api/alerts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lat: centerLat,
+          lon: centerLng
+        }),
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('NOAAService - Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          text: errorText
+        });
+        throw new Error(`Failed to fetch alerts: ${errorText}`);
+      }
 
       const data = await response.json();
-      const alerts: NOAAAlert[] = data.features.map((feature: any) => feature.properties);
+      console.log('NOAAService - Raw alert data:', data);
 
-      return this.processAlerts(alerts);
+      const alerts: NOAAAlert[] = data.alerts || [];
+      const processedAlerts = this.processAlerts(alerts);
+      console.log('NOAAService - Processed alerts:', processedAlerts);
+
+      return processedAlerts;
     } catch (error) {
       console.error('Error fetching alerts:', error);
       return [];

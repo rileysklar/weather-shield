@@ -11,6 +11,9 @@ export interface RiskAssessment {
 
 export class RiskCalculatorService {
   static calculateSiteRisk(site: DashboardSiteData, alerts: ProcessedAlert[]): RiskAssessment {
+    console.log('RiskCalculator - Starting risk calculation for site:', site.name);
+    console.log('RiskCalculator - Alerts received:', alerts);
+
     // First check for basic weather conditions that might trigger minor warnings
     const minorFactors = [];
     
@@ -18,6 +21,13 @@ export class RiskCalculatorService {
     if (site.currentWeather) {
       const { wind_speed, clouds_percentage, weather_condition, temperature } = site.currentWeather;
       
+      console.log('RiskCalculator - Weather conditions:', {
+        wind_speed,
+        clouds_percentage,
+        weather_condition,
+        temperature
+      });
+
       // More sensitive wind speed threshold
       if (wind_speed && wind_speed > 10) {
         minorFactors.push('Elevated Wind Speed (Minor)');
@@ -37,50 +47,38 @@ export class RiskCalculatorService {
       }
     }
 
-    // Filter alerts that affect this site
-    const siteAlerts = alerts.filter(alert => {
-      // Calculate site center
-      const centerLat = site.coordinates.reduce((sum, coord) => sum + coord[1], 0) / site.coordinates.length;
-      const centerLng = site.coordinates.reduce((sum, coord) => sum + coord[0], 0) / site.coordinates.length;
+    console.log('RiskCalculator - Minor factors from weather:', minorFactors);
 
-      // Check if any alert area contains the site's location
-      return alert.areas.some(area => {
-        // Convert coordinates to strings for comparison
-        const latStr = centerLat.toFixed(2);
-        const lngStr = centerLng.toFixed(2);
-        const areaLower = area.toLowerCase();
+    // Calculate site center once
+    const centerLat = site.coordinates.reduce((sum, coord) => sum + coord[1], 0) / site.coordinates.length;
+    const centerLng = site.coordinates.reduce((sum, coord) => sum + coord[0], 0) / site.coordinates.length;
 
-        // Check for county/region match
-        const locationParts = area.split(',').map(part => part.trim().toLowerCase());
-        const hasLocationMatch = locationParts.some(part => 
-          // Match against common location formats
-          part.includes('county') || 
-          part.includes('region') || 
-          part.includes('area') ||
-          part.includes('zone')
-        );
+    // For now, consider all alerts as affecting the site
+    // This is temporary until we can improve the area matching logic
+    const siteAlerts = alerts;
 
-        // If we have a location match or coordinate match, consider it affecting the site
-        return hasLocationMatch || areaLower.includes(latStr) || areaLower.includes(lngStr);
-      });
-    });
+    console.log('RiskCalculator - Filtered alerts affecting site:', siteAlerts);
 
     // If we have minor factors but no alerts, return minor risk
     if (siteAlerts.length === 0 && minorFactors.length > 0) {
-      return {
+      const assessment = {
         riskLevel: 25, // Low but non-zero risk level
-        riskCategory: 'minor',
+        riskCategory: 'minor' as RiskCategory,
         primaryRiskFactors: minorFactors
       };
+      console.log('RiskCalculator - Returning minor risk assessment:', assessment);
+      return assessment;
     }
 
     // If no alerts and no minor factors, return low risk
     if (siteAlerts.length === 0) {
-      return {
+      const assessment = {
         riskLevel: 0,
-        riskCategory: 'low',
+        riskCategory: 'low' as RiskCategory,
         primaryRiskFactors: []
       };
+      console.log('RiskCalculator - Returning low risk assessment:', assessment);
+      return assessment;
     }
 
     // Calculate base risk from alert severity with adjusted scores
@@ -104,6 +102,9 @@ export class RiskCalculatorService {
       riskFactors.push(`${alert.event} (${alert.severity})`);
     });
 
+    console.log('RiskCalculator - Max severity score:', maxSeverityScore);
+    console.log('RiskCalculator - Risk factors:', riskFactors);
+
     // Adjust risk based on site type and its vulnerability to weather
     const siteTypeMultipliers: Record<string, number> = {
       'solar_array': 1.2,  // More sensitive to severe weather
@@ -120,6 +121,9 @@ export class RiskCalculatorService {
     const siteMultiplier = siteTypeMultipliers[site.type] || 1.0;
     const finalRiskLevel = Math.min(100, Math.round(maxSeverityScore * siteMultiplier));
 
+    console.log('RiskCalculator - Site type multiplier:', siteMultiplier);
+    console.log('RiskCalculator - Final risk level:', finalRiskLevel);
+
     // Determine risk category based on final risk level with adjusted thresholds
     let riskCategory: RiskCategory;
     if (finalRiskLevel >= 80) riskCategory = 'extreme';
@@ -129,11 +133,14 @@ export class RiskCalculatorService {
     else if (finalRiskLevel > 0) riskCategory = 'minor';
     else riskCategory = 'low';
 
-    return {
+    const assessment = {
       riskLevel: finalRiskLevel,
       riskCategory,
       primaryRiskFactors: riskFactors
     };
+
+    console.log('RiskCalculator - Final assessment:', assessment);
+    return assessment;
   }
 
   static getRiskColor(category: RiskCategory): string {

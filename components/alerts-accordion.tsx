@@ -90,38 +90,24 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
 
   const getSeverityColor = (severity: string) => {
     if (severity.includes('Extreme') || severity.includes('Severe')) {
-      return 'text-destructive border-destructive';
+      return 'text-destructive border-destructive bg-destructive/20';
     }
     if (severity.includes('Moderate')) {
-      return 'text-warning border-warning';
+      return 'text-warning border-warning bg-warning/20';
     }
-    return 'text-muted-foreground border-muted';
+    return 'text-muted-foreground border-muted bg-muted/20';
   };
 
   return (
     <Accordion type="single" collapsible className="w-full">
       <AccordionItem value="alerts">
         <AccordionTrigger className="hover:no-underline">
-          <div className="flex flex-col items-start gap-1 pr-6">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">Weather Alerts</h3>
-              {alerts.length > 0 && (
-                <Badge variant="outline" className="rounded-full px-2 py-0.5 text-xs">
-                  {alerts.length}
-                </Badge>
-              )}
-            </div>
-            {alerts.some(alert => alert.affectedSites.length > 0) && (
-              <div className="flex flex-wrap gap-1">
-                {alerts.map(alert => (
-                  alert.affectedSites.map(site => (
-                    <Badge key={`${alert.id}-${site.id}`} variant="secondary" className="text-xs">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      {site.name}
-                    </Badge>
-                  ))
-                ))}
-              </div>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold">Weather Alerts</h3>
+            {alerts.length > 0 && (
+              <Badge variant="outline" className={`rounded-md bg-primary/20 px-2 py-0.5 text-xs border-2 ${getSeverityColor(alerts[0].severity)}`}>
+                {alerts.length}
+              </Badge>
             )}
           </div>
         </AccordionTrigger>
@@ -151,7 +137,7 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
                               <h4 className="font-medium">{alert.event}</h4>
                               <Badge 
                                 variant="outline" 
-                                className={`text-xs shrink-0 ${getSeverityColor(alert.severity)}`}
+                                className={`text-xs shrink-0 rounded-md border-2 ${getSeverityColor(alert.severity)}`}
                               >
                                 {alert.severity}
                               </Badge>

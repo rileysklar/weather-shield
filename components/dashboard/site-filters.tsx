@@ -116,7 +116,7 @@ export function SiteFilters() {
             </Badge>
             <Badge
               variant={state.hasActiveAlerts === false ? 'default' : 'outline'}
-              className="cursor-pointer rounded-md py-2 hover:bg-primary/20 hover:text-white text-sm justify-center"
+              className="cursor-pointer border-2 rounded-md py-2 hover:bg-primary/20 hover:text-white text-sm justify-center"
               onClick={() => dispatch({ 
                 type: 'SET_ACTIVE_ALERTS', 
                 payload: state.hasActiveAlerts === false ? null : false 
@@ -146,7 +146,13 @@ export function SiteFilters() {
             <AccordionItem value="alerts" className="border-none" id="alerts-accordion">
               <AccordionTrigger className="py-2">Active Alerts</AccordionTrigger>
               <AccordionContent>
-                <AlertsTimeline sites={filteredSites} />
+                {filteredSites.some(site => site.alerts.count > 0) ? (
+                  <AlertsTimeline sites={filteredSites} />
+                ) : (
+                  <div className="py-4 text-center text-sm bg-muted/50 rounded-lg text-muted-foreground">
+                    No active alerts at this time
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="stats" className="border-none">

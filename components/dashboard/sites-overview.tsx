@@ -93,6 +93,24 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
     setCurrentPage(1); // Reset to first page when changing items per page
   };
 
+  const handleSiteClick = (site: DashboardSiteData) => {
+    setSelectedSite(site);
+    onSiteSelect?.(site.id);
+    
+    // Account for the fixed navigation bar height
+    const navHeight = 64; // Standard height of the nav bar
+    const element = document.getElementById('selected-site-details');
+    if (element) {
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <Tabs defaultValue="all" className="space-y-4">
@@ -120,10 +138,7 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
                 key={site.id}
                 site={site}
                 isSelected={selectedSite?.id === site.id}
-                onClick={() => {
-                  setSelectedSite(site);
-                  onSiteSelect?.(site.id);
-                }}
+                onClick={() => handleSiteClick(site)}
               />
             ))}
           </div>
@@ -177,10 +192,7 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
                     key={site.id}
                     site={site}
                     isSelected={selectedSite?.id === site.id}
-                    onClick={() => {
-                      setSelectedSite(site);
-                      onSiteSelect?.(site.id);
-                    }}
+                    onClick={() => handleSiteClick(site)}
                   />
                 ))}
               </div>
@@ -228,7 +240,7 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
 
       {/* Selected Site Details */}
       {selectedSite && (
-        <Card className="">
+        <Card id="selected-site-details" className="scroll-mt-24">
           <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
               <div>
@@ -237,16 +249,20 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
                   {selectedSite.description || `Weather and risk information for ${selectedSite.name}`}
                 </CardDescription>
               </div>
-              {selectedSite.alerts.count > 0 && (
-                <div className="text-right">
-                  <span className="text-sm font-medium text-muted-foreground">Alerts</span>
-                  <div className="mt-1">
+              <div className="text-right">
+                <span className="text-sm font-medium text-muted-foreground">Alerts</span>
+                <div className="mt-1">
+                  {selectedSite.alerts.count > 0 ? (
                     <span className="capitalize text-sm font-medium">
                       {selectedSite.alerts.count} {selectedSite.alerts.highestSeverity}
                     </span>
-                  </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      No alerts at this time
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>

@@ -126,6 +126,9 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
       zoom: 3
     });
 
+    // Add navigation controls
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
     // Initialize polygon service but don't add controls yet
     polygonService.current = new PolygonService();
 

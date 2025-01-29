@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSiteData } from "@/utils/services/dashboard";
 import { useMemo } from "react";
-import { Thermometer, Wind, CloudRain, Activity } from "lucide-react";
+import { Thermometer, Wind, CloudRain, Activity, AlertTriangle } from "lucide-react";
 
 interface SiteStatisticsProps {
   sites: DashboardSiteData[];
@@ -24,6 +24,15 @@ export function SiteStatistics({ sites }: SiteStatisticsProps) {
 
     const alertCounts = sites.map(site => site.alerts.count);
 
+    // Calculate risk levels
+    const riskLevels = {
+      extreme: sites.filter(site => site.alerts.highestSeverity === 'extreme').length,
+      severe: sites.filter(site => site.alerts.highestSeverity === 'severe').length,
+      moderate: sites.filter(site => site.alerts.highestSeverity === 'moderate').length,
+      minor: sites.filter(site => site.alerts.highestSeverity === 'minor').length,
+      normal: sites.filter(site => !site.alerts.highestSeverity).length
+    };
+
     return {
       avgTemp: temperatures.length ? 
         Math.round(temperatures.reduce((a, b) => a + b, 0) / temperatures.length) : null,
@@ -35,6 +44,7 @@ export function SiteStatistics({ sites }: SiteStatisticsProps) {
         Math.round(Math.max(...windSpeeds)) : null,
       totalAlerts: alertCounts.reduce((a, b) => a + b, 0),
       sitesWithAlerts: alertCounts.filter(count => count > 0).length,
+      riskLevels
     };
   }, [sites]);
 
@@ -55,6 +65,26 @@ export function SiteStatistics({ sites }: SiteStatisticsProps) {
           <span>{stats.sitesWithAlerts} ({Math.round(stats.sitesWithAlerts / sites.length * 100)}%)</span>
           <span className="text-muted-foreground">Total Alerts:</span>
           <span>{stats.totalAlerts}</span>
+        </div>
+      </div>
+
+      {/* Risk Levels Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Risk Levels</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1 text-sm">
+          <span className="text-muted-foreground">Extreme:</span>
+          <span>{stats.riskLevels.extreme}</span>
+          <span className="text-muted-foreground">Severe:</span>
+          <span>{stats.riskLevels.severe}</span>
+          <span className="text-muted-foreground">Moderate:</span>
+          <span>{stats.riskLevels.moderate}</span>
+          <span className="text-muted-foreground">Minor:</span>
+          <span>{stats.riskLevels.minor}</span>
+          <span className="text-muted-foreground">Normal:</span>
+          <span>{stats.riskLevels.normal}</span>
         </div>
       </div>
 

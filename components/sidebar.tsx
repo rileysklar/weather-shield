@@ -12,7 +12,7 @@ import TemperatureChart from './temperature-chart';
 import { ThemeSwitcher } from './theme-switcher';
 import { SearchBar } from './search-bar';
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { PolygonCoordinates } from './polygon-coordinates';
 import { ProjectSiteForm, ProjectSiteDetails, PROJECT_TYPES } from './project-site-form';
 import { ProjectSiteList } from './project-site-list';
@@ -22,22 +22,16 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AlertsAccordion } from './alerts-accordion';
 import { RiskIndicator } from './risk-indicator';
-import { ProcessedAlert } from '@/utils/services/noaa';
+import { NOAAService, ProcessedAlert } from '@/utils/services/noaa';
+import { WeatherService } from '@/utils/services/weather';
+import { WeatherUpdateService } from '@/utils/services/weather-update';
+import { DashboardSiteData } from '@/utils/services/dashboard';
+import { WeatherData } from '@/types/weather';
 
-interface WeatherData {
-  forecast: Array<{
-    number: number;
-    name: string;
-    temperature: number;
-    temperatureUnit: string;
-    windSpeed: string;
-    windDirection: string;
-    shortForecast: string;
-    detailedForecast: string;
-    icon: string;
-  }>;
-  city: string;
-  country: string;
+interface SidebarWeatherData {
+  [siteId: string]: {
+    currentWeather: WeatherData | null;
+  };
 }
 
 interface ProjectSite {
@@ -49,7 +43,7 @@ interface ProjectSite {
 }
 
 interface SidebarProps {
-  weatherData: WeatherData | null;
+  weatherData: SidebarWeatherData | null;
   location: { 
     lat: number; 
     lng: number;
@@ -168,7 +162,44 @@ export function Sidebar({
   const [editingName, setEditingName] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
   const [editingType, setEditingType] = useState('');
-  const [siteAlerts, setSiteAlerts] = useState<ProcessedAlert[]>([]);
+  const [siteAlerts, setSiteAlerts] = useState<Record<string, ProcessedAlert[]>>({});
+
+  // Fetch alerts for each site
+  useEffect(() => {
+    const fetchSiteAlerts = async () => {
+      console.log('Sidebar - Starting to fetch alerts for sites:', projectSites);
+      const alertsMap: Record<string, ProcessedAlert[]> = {};
+      
+      for (const site of projectSites) {
+        try {
+          console.log(`Sidebar - Fetching alerts for site ${site.id}:`, site);
+          const alerts = await NOAAService.getAlertsForSite({
+            coordinates: site.coordinates
+          });
+          console.log(`Sidebar - Received alerts for site ${site.id}:`, alerts);
+          alertsMap[site.id] = alerts;
+        } catch (error) {
+          console.error(`Error fetching alerts for site ${site.id}:`, error);
+          alertsMap[site.id] = [];
+        }
+      }
+      
+      console.log('Sidebar - Final alerts map:', alertsMap);
+      setSiteAlerts(alertsMap);
+    };
+
+    fetchSiteAlerts();
+  }, [projectSites]);
+
+  // Debug log whenever siteAlerts changes
+  useEffect(() => {
+    console.log('Sidebar - Site alerts state updated:', siteAlerts);
+  }, [siteAlerts]);
+
+  // Debug log whenever weatherData changes
+  useEffect(() => {
+    console.log('Sidebar - Weather data updated:', weatherData);
+  }, [weatherData]);
 
   useEffect(() => {
     if (location) {
@@ -285,7 +316,7 @@ export function Sidebar({
                           <AccordionTrigger className="hover:no-underline">
                             <div className="flex items-center gap-2">
                               <h3 className="font-semibold">Project Sites</h3>
-                              <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
+                              <Badge variant="secondary" className="rounded-md bg-primary/20 border-2 border-primary/30 px-2 py-0.5 text-xs">
                                 {projectSites.length}
                               </Badge>
                             </div>
@@ -293,103 +324,121 @@ export function Sidebar({
                           <AccordionContent>
                             <div className="space-y-2">
                               {projectSites.map((site) => (
-                                <Card key={site.id} className="p-4">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
+                                <Card
+                                  key={site.id}
+                                  className={cn(
+                                    "cursor-pointer hover:bg-accent/50 transition-colors",
+                                    location?.projectSiteId === site.id && "bg-accent"
+                                  )}
+                                  onClick={() => onProjectSiteSelect?.(site)}
+                                >
+                                  <CardContent className="p-4 space-y-2">
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        {editingSiteId === site.id ? (
+                                          <Input
+                                            value={editingName}
+                                            onChange={(e) => setEditingName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') handleSaveEdit();
+                                              if (e.key === 'Escape') setEditingSiteId(null);
+                                            }}
+                                            className="h-8 flex-1 mr-2"
+                                            autoFocus
+                                          />
+                                        ) : (
+                                          <button
+                                            className="text-lg font-semibold hover:text-primary transition-colors text-left w-full"
+                                          >
+                                            {site.name}
+                                          </button>
+                                        )}
+                                      </div>
                                       {editingSiteId === site.id ? (
-                                        <Input
-                                          value={editingName}
-                                          onChange={(e) => setEditingName(e.target.value)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleSaveEdit();
-                                            if (e.key === 'Escape') setEditingSiteId(null);
-                                          }}
-                                          className="h-8 flex-1 mr-2"
-                                          autoFocus
-                                        />
+                                        <>
+                                          <Input
+                                            value={editingDescription}
+                                            onChange={(e) => setEditingDescription(e.target.value)}
+                                            placeholder="Description"
+                                            className="h-8 w-full text-sm"
+                                          />
+                                          <select
+                                            value={editingType}
+                                            onChange={(e) => setEditingType(e.target.value)}
+                                            className="h-8 w-full text-xs rounded-md border border-input bg-background px-3"
+                                          >
+                                            {PROJECT_TYPES.map(type => (
+                                              <option key={type.value} value={type.value}>
+                                                {type.label}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </>
                                       ) : (
-                                        <button
-                                          onClick={() => onProjectSiteSelect?.(site)}
-                                          className="text-lg font-semibold hover:text-primary transition-colors text-left w-full"
-                                        >
-                                          {site.name}
-                                        </button>
+                                        <>
+                                          {site.description && (
+                                            <p className="text-sm text-muted-foreground">{site.description}</p>
+                                          )}
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                              <Badge variant="outline" className="text-xs rounded-md border-2">
+                                                {formatSiteType(site.type)}
+                                              </Badge>
+                                              <RiskIndicator 
+                                                site={site} 
+                                                alerts={siteAlerts[site.id] || []} 
+                                                weatherData={weatherData?.[site.id]?.currentWeather || null}
+                                              />
+                                            </div>
+                                            <div className="flex gap-1 shrink-0">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleStartEdit(site);
+                                                }}
+                                                className="h-6 w-6 p-0"
+                                              >
+                                                <Pencil className="h-3 w-3" />
+                                              </Button>
+                                              <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 w-6 p-0 hover:text-destructive"
+                                                  >
+                                                    <Trash2 className="h-3 w-3" />
+                                                  </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                  <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete Project Site</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                      Are you sure you want to delete this project site? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                  </AlertDialogHeader>
+                                                  <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onProjectSiteDelete?.(site.id);
+                                                      }}
+                                                      className="bg-destructive hover:bg-destructive/90"
+                                                    >
+                                                      Delete
+                                                    </AlertDialogAction>
+                                                  </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                              </AlertDialog>
+                                            </div>
+                                          </div>
+                                        </>
                                       )}
                                     </div>
-                                    {editingSiteId === site.id ? (
-                                      <>
-                                        <Input
-                                          value={editingDescription}
-                                          onChange={(e) => setEditingDescription(e.target.value)}
-                                          placeholder="Description"
-                                          className="h-8 w-full text-sm"
-                                        />
-                                        <select
-                                          value={editingType}
-                                          onChange={(e) => setEditingType(e.target.value)}
-                                          className="h-8 w-full text-xs rounded-md border border-input bg-background px-3"
-                                        >
-                                          {PROJECT_TYPES.map(type => (
-                                            <option key={type.value} value={type.value}>
-                                              {type.label}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </>
-                                    ) : (
-                                      <>
-                                        {site.description && (
-                                          <p className="text-sm text-muted-foreground">{site.description}</p>
-                                        )}
-                                        <div className="flex items-center justify-between gap-2">
-                                          <div className="flex items-center gap-2">
-                                            <Badge variant="outline" className="text-xs">
-                                              {formatSiteType(site.type)}
-                                            </Badge>
-                                            <RiskIndicator site={site} alerts={siteAlerts} />
-                                          </div>
-                                          <div className="flex gap-1 shrink-0">
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => handleStartEdit(site)}
-                                              className="h-6 w-6 p-0"
-                                            >
-                                              <Pencil className="h-3 w-3" />
-                                            </Button>
-                                            <AlertDialog>
-                                              <AlertDialogTrigger asChild>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="h-6 w-6 p-0 hover:text-destructive"
-                                                >
-                                                  <Trash2 className="h-3 w-3" />
-                                                </Button>
-                                              </AlertDialogTrigger>
-                                              <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                  <AlertDialogTitle>Delete Project Site</AlertDialogTitle>
-                                                  <AlertDialogDescription>
-                                                    Are you sure you want to delete this project site? This action cannot be undone.
-                                                  </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                  <AlertDialogAction
-                                                    onClick={() => onProjectSiteDelete?.(site.id)}
-                                                    className="bg-destructive hover:bg-destructive/90"
-                                                  >
-                                                    Delete
-                                                  </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                              </AlertDialogContent>
-                                            </AlertDialog>
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
+                                  </CardContent>
                                 </Card>
                               ))}
                             </div>
