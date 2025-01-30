@@ -49,9 +49,9 @@ const TypewriterEffect = () => {
       <motion.span
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
-        className="absolute left-[calc(0ch+var(--cursor-offset))] inline-block w-[4px] h-[1em] bg-current align-middle"
+        className="absolute left-[calc(0ch+var(--cursor-offset))] inline-block w-[2px] h-[1em] bg-current align-middle"
         style={{
-          '--cursor-offset': `${currentText.length - .0}ch`
+          '--cursor-offset': `${currentText.length - 0.4}ch`
         } as any}
       />
     </motion.div>
