@@ -1,12 +1,13 @@
 import { ProjectSiteService } from './project-site';
 import { WeatherData } from '@/types/weather';
 import { WeatherUpdateService } from './weather-update';
+import { SiteType } from '@/types/site';
 
 export interface DashboardSiteData {
   id: string;
   name: string;
   description: string | null;
-  type: string;
+  type: SiteType;
   coordinates: number[][];
   currentWeather: WeatherData | null;
   alerts: {
@@ -36,7 +37,8 @@ export class DashboardService {
             const latestWeather = await this.projectSiteService.getLatestWeatherData(site.id);
             
             // If weather data is more than 15 minutes old, trigger background update
-            if (latestWeather && new Date().getTime() - new Date(latestWeather.timestamp).getTime() > 15 * 60 * 1000) {
+            if (latestWeather?.timestamp && 
+                new Date().getTime() - new Date(latestWeather.timestamp).getTime() > 15 * 60 * 1000) {
               this.weatherUpdateService.updateWeatherForSite(site).catch(console.error);
             }
             
@@ -44,11 +46,11 @@ export class DashboardService {
               id: site.id,
               name: site.name,
               description: site.description,
-              type: site.type,
-              coordinates: site.coordinates,
+              type: site.site_type,
+              coordinates: site.coordinates as number[][],
               currentWeather: latestWeather,
               alerts: {
-                count: latestWeather?.alerts?.length || 0,
+                count: Array.isArray(latestWeather?.alerts) ? latestWeather.alerts.length : 0,
                 highestSeverity: latestWeather?.highest_alert_severity || null
               }
             };
@@ -58,8 +60,8 @@ export class DashboardService {
               id: site.id,
               name: site.name,
               description: site.description,
-              type: site.type,
-              coordinates: site.coordinates,
+              type: site.site_type,
+              coordinates: site.coordinates as number[][],
               currentWeather: null,
               alerts: {
                 count: 0,

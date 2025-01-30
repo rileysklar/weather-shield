@@ -33,11 +33,15 @@ const SEVERITY_LEVELS = [
 ];
 
 const formatSiteType = (type: string | undefined | null) => {
-  if (!type) return 'Unknown';
-  const projectType = PROJECT_TYPES.find(t => t.value === type);
-  return projectType?.label || type.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
+  if (!type) return 'Type Not Specified';
+  
+  const projectType = PROJECT_TYPES.find(t => t.value === type.toLowerCase());
+  if (projectType) return projectType.label;
+  
+  // If type exists but doesn't match any PROJECT_TYPES, format it nicely
+  return type.split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
 interface SitesOverviewProps {

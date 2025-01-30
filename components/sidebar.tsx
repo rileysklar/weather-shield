@@ -381,7 +381,7 @@ export function Sidebar({
                                           )}
                                           <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-2">
-                                              <Badge variant="outline" className="text-xs rounded-md border-2">
+                                              <Badge variant="outline" className="text-xs rounded-md border-2 px-2 py-1">
                                                 {formatSiteType(site.type)}
                                               </Badge>
                                               <RiskIndicator 

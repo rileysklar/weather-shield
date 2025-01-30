@@ -32,10 +32,21 @@ interface ProjectSiteListProps {
   onDelete?: (siteId: string) => Promise<void>;
 }
 
-const formatSiteType = (type: string) => {
-  return type.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
+const PROJECT_TYPES = [
+  { value: 'solar_array', label: 'Solar Array' },
+  { value: 'wind_farm', label: 'Wind Farm' },
+  { value: 'hydroelectric', label: 'Hydroelectric' },
+  { value: 'coal', label: 'Coal' },
+  { value: 'natural_gas', label: 'Natural Gas' },
+  { value: 'nuclear', label: 'Nuclear' },
+  { value: 'geothermal', label: 'Geothermal' },
+  { value: 'biomass', label: 'Biomass' },
+  { value: 'other', label: 'Other' }
+];
+
+const getSiteTypeLabel = (type: string) => {
+  const projectType = PROJECT_TYPES.find(t => t.value === type);
+  return projectType?.label || type;
 };
 
 export function ProjectSiteList({ sites, onSelect, onEdit, onDelete }: ProjectSiteListProps) {
@@ -103,7 +114,7 @@ export function ProjectSiteList({ sites, onSelect, onEdit, onDelete }: ProjectSi
                     {site.name}
                   </button>
                   <Badge variant="outline" className="text-xs">
-                    {formatSiteType(site.type)}
+                    {getSiteTypeLabel(site.type)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-1">

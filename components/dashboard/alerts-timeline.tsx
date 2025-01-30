@@ -71,11 +71,11 @@ export function AlertsTimeline({ sites }: AlertsTimelineProps) {
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
-      case 'extreme': return 'bg-red-500/10 text-red-500';
-      case 'severe': return 'bg-orange-500/10 text-orange-500';
-      case 'moderate': return 'bg-yellow-500/10 text-yellow-500';
-      case 'minor': return 'bg-blue-500/10 text-blue-500';
-      default: return 'bg-secondary text-secondary-foreground';
+      case 'extreme': return 'bg-red-500/10 text-red-500 border-red-500 hover:bg-red-500/20 hover:text-red-500';
+      case 'severe': return 'bg-orange-500/10 text-orange-500 border-orange-500 hover:bg-orange-500/20 hover:text-orange-500';
+      case 'moderate': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500 hover:bg-yellow-500/20 hover:text-yellow-500';
+      case 'minor': return 'bg-blue-500/10 text-blue-500 border-blue-500 hover:bg-blue-500/20 hover:text-blue-500';
+      default: return 'bg-secondary text-secondary-foreground border-secondary hover:bg-secondary/20 hover:text-secondary';
     }
   };
 
@@ -96,7 +96,7 @@ export function AlertsTimeline({ sites }: AlertsTimelineProps) {
                 <Clock className="h-3 w-3" />
                 <span>Expires in: {timeLeft[alert.id]}</span>
               </div>
-              <Badge className={cn("rounded-md", getSeverityColor(alert.severity))}>
+              <Badge className={cn("rounded-md border-2 px-3 py-1", getSeverityColor(alert.severity))}>
                 {alert.severity}
               </Badge>
             </div>

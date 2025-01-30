@@ -10,6 +10,8 @@ import { AlertTriangle, AlertCircle, Activity, MapPin } from 'lucide-react';
 import { DashboardSiteData } from '@/utils/services/dashboard';
 import { WeatherData } from '@/types/weather';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SiteType } from '@/types/site';
 
 interface RiskIndicatorProps {
   site: ProjectSite;
@@ -19,58 +21,81 @@ interface RiskIndicatorProps {
 
 export function RiskIndicator({ site, alerts, weatherData = null }: RiskIndicatorProps) {
   const [risk, setRisk] = useState<RiskAssessment | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log(`RiskIndicator - Processing site "${site.name}" (${site.id}):`, {
-      site,
-      alerts,
-      weatherData,
-      coordinates: site.coordinates,
-      type: site.type
-    });
+    const calculateRisk = async () => {
+      setIsLoading(true);
+      try {
+        // Normalize alert severities to match the expected format
+        const normalizedAlerts = alerts.map(alert => ({
+          ...alert,
+          severity: alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1).toLowerCase()
+        }));
 
-    // Normalize alert severities to match the expected format
-    const normalizedAlerts = alerts.map(alert => ({
-      ...alert,
-      severity: alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1).toLowerCase()
-    }));
+        // Sort alerts by severity
+        const sortedAlerts = [...normalizedAlerts].sort((a, b) => {
+          const severityOrder = {
+            'Extreme': 4,
+            'Severe': 3,
+            'Moderate': 2,
+            'Minor': 1,
+            'Unknown': 0
+          };
+          return (severityOrder[b.severity as keyof typeof severityOrder] || 0) - 
+                (severityOrder[a.severity as keyof typeof severityOrder] || 0);
+        });
 
-    // Sort alerts by severity
-    const sortedAlerts = [...normalizedAlerts].sort((a, b) => {
-      const severityOrder = {
-        'Extreme': 4,
-        'Severe': 3,
-        'Moderate': 2,
-        'Minor': 1,
-        'Unknown': 0
-      };
-      return (severityOrder[b.severity as keyof typeof severityOrder] || 0) - 
-             (severityOrder[a.severity as keyof typeof severityOrder] || 0);
-    });
+        // Convert to dashboard site data format
+        const dashboardSite: DashboardSiteData = {
+          id: site.id,
+          name: site.name,
+          description: site.description,
+          type: site.type as SiteType,
+          coordinates: site.coordinates,
+          currentWeather: weatherData,
+          alerts: {
+            count: sortedAlerts.length,
+            highestSeverity: (sortedAlerts[0]?.severity?.toLowerCase() as 'minor' | 'moderate' | 'severe' | 'extreme' | null) || null
+          }
+        };
 
-    console.log(`RiskIndicator - "${site.name}" sorted alerts:`, sortedAlerts);
-
-    // Convert ProjectSite to DashboardSiteData
-    const dashboardSite: DashboardSiteData = {
-      id: site.id,
-      name: site.name,
-      description: site.description,
-      type: site.type,
-      coordinates: site.coordinates,
-      currentWeather: weatherData,
-      alerts: {
-        count: sortedAlerts.length,
-        highestSeverity: (sortedAlerts[0]?.severity?.toLowerCase() as 'minor' | 'moderate' | 'severe' | 'extreme' | null) || null
+        const assessment = RiskCalculatorService.calculateSiteRisk(dashboardSite, sortedAlerts);
+        setRisk(assessment);
+      } catch (error) {
+        console.error('Error calculating risk:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    console.log(`RiskIndicator - "${site.name}" dashboard site data:`, dashboardSite);
-
-    const assessment = RiskCalculatorService.calculateSiteRisk(dashboardSite, sortedAlerts);
-    console.log(`RiskIndicator - "${site.name}" risk assessment:`, assessment);
-    
-    setRisk(assessment);
+    calculateRisk();
   }, [site, alerts, weatherData]);
+
+  if (isLoading) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge 
+              variant="outline" 
+              className="text-sm md:text-xs shrink-0 gap-1.5 transition-colors rounded-md border-2 py-1 px-2.5 cursor-wait bg-muted/20"
+            >
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-8" />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[90vw] md:max-w-[300px] p-3">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   if (!risk) return null;
 

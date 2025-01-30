@@ -7,6 +7,23 @@ import { DashboardSiteData } from "@/utils/services/dashboard";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 
+const PROJECT_TYPES = [
+  { value: 'solar_array', label: 'Solar Array' },
+  { value: 'wind_farm', label: 'Wind Farm' },
+  { value: 'hydroelectric', label: 'Hydroelectric' },
+  { value: 'coal', label: 'Coal' },
+  { value: 'natural_gas', label: 'Natural Gas' },
+  { value: 'nuclear', label: 'Nuclear' },
+  { value: 'geothermal', label: 'Geothermal' },
+  { value: 'biomass', label: 'Biomass' },
+  { value: 'other', label: 'Other' }
+];
+
+const getSiteTypeLabel = (type: string) => {
+  const projectType = PROJECT_TYPES.find(t => t.value === type);
+  return projectType?.label || type;
+};
+
 interface SiteWeatherCardProps {
   site: DashboardSiteData;
   onClick?: () => void;
@@ -120,7 +137,7 @@ export function SiteWeatherCard({ site, onClick, isSelected }: SiteWeatherCardPr
         <div className="flex justify-between items-start">
           <div>
             <CardTitle>{site.name}</CardTitle>
-            <CardDescription>{site.type}</CardDescription>
+            <CardDescription>{getSiteTypeLabel(site.type)}</CardDescription>
           </div>
           {site.alerts.count > 0 && (
             <Badge 

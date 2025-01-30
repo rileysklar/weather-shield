@@ -16,6 +16,8 @@ interface AlertsAccordionProps {
 
 interface AlertWithSites extends ProcessedAlert {
   affectedSites: ProjectSite[];
+  displayId: string;
+  originalId?: string;
 }
 
 export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordionProps) {
@@ -23,49 +25,96 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.group('🎯 AlertsAccordion - Component Lifecycle');
+    console.log('%c Component mounted/updated with sites:', 'color: #2196F3; font-weight: bold', projectSites);
+    
     const fetchAlerts = async () => {
       if (!projectSites.length) return;
       
       setLoading(true);
       try {
+        console.group('📡 AlertsAccordion - Fetching Alerts');
+        console.log('%c Fetching alerts for sites:', 'color: #4CAF50; font-weight: bold', projectSites.map(s => s.id));
         const siteAlerts = await NOAAService.getAllSiteAlerts(projectSites);
-        // Match alerts with affected project sites
-        const alertsWithSites = siteAlerts.map(alert => ({
-          ...alert,
-          affectedSites: projectSites.filter(site => {
+        console.log('%c Raw alerts received:', 'color: #9C27B0; font-weight: bold', siteAlerts.map(a => ({ id: a.id, event: a.event })));
+        
+        // Match alerts with affected project sites and ensure uniqueness
+        const alertsMap = new Map<string, AlertWithSites>();
+        
+        siteAlerts.forEach((alert, index) => {
+          console.group(`🔄 Processing Alert ${index + 1}/${siteAlerts.length}`);
+          console.log('%c Alert details:', 'color: #FF9800; font-weight: bold', { 
+            id: alert.id, 
+            event: alert.event,
+            index 
+          });
+          
+          const affectedSites = projectSites.filter(site => {
             const centerLat = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[1], 0) / site.coordinates.length;
             const centerLng = site.coordinates.reduce((sum: number, coord: number[]) => sum + coord[0], 0) / site.coordinates.length;
             
-            // Split areas into individual locations and normalize
             return alert.areas.some(area => {
-              // Split by common delimiters and clean up
               const locations = area
                 .split(/[,;]/)
                 .map(loc => loc.trim().toLowerCase())
                 .filter(loc => loc.length > 0);
               
-              // Get site location name if available
               const siteName = site.name?.toLowerCase() || '';
               const siteDesc = site.description?.toLowerCase() || '';
               
-              // Check each location against site info
               return locations.some(location => 
-                // Check if site name or description contains the location name
                 siteName.includes(location) || 
                 location.includes(siteName) ||
                 siteDesc.includes(location) ||
-                // Also check coordinates as fallback
                 location.includes(centerLat.toFixed(2)) || 
                 location.includes(centerLng.toFixed(2))
               );
             });
-          })
-        }));
-        console.log('Alerts with sites:', alertsWithSites);
-        setAlerts(alertsWithSites);
+          });
+
+          // Create a unique key for each alert using stable values
+          const alertKey = `${alert.id}`;
+          console.log('%c Generated alert key:', 'color: #9C27B0; font-weight: bold', { 
+            alertKey,
+            exists: alertsMap.has(alertKey)
+          });
+          
+          if (alertsMap.has(alertKey)) {
+            // Merge affected sites if alert already exists
+            const existing = alertsMap.get(alertKey)!;
+            console.log('%c Merging sites for existing alert:', 'color: #FF9800; font-weight: bold', {
+              alertId: alert.id,
+              currentSites: existing.affectedSites.length,
+              newSites: affectedSites.length
+            });
+            existing.affectedSites = Array.from(new Set([...existing.affectedSites, ...affectedSites]));
+          } else {
+            // Add new alert with its affected sites
+            console.log('%c Adding new alert:', 'color: #4CAF50; font-weight: bold', {
+              alertId: alert.id,
+              affectedSites: affectedSites.length
+            });
+            alertsMap.set(alertKey, {
+              ...alert,
+              affectedSites,
+              displayId: alert.id
+            } as AlertWithSites);
+          }
+          console.groupEnd();
+        });
+
+        const uniqueAlerts = Array.from(alertsMap.values());
+        console.log('%c Final unique alerts:', 'color: #4CAF50; font-weight: bold', uniqueAlerts.map(a => ({
+          id: a.id,
+          displayId: a.displayId,
+          event: a.event,
+          affectedSites: a.affectedSites.length
+        })));
+        console.groupEnd();
+        setAlerts(uniqueAlerts);
         onAlertsChange?.(siteAlerts);
       } catch (error) {
-        console.error('Error fetching alerts:', error);
+        console.error('%c Error fetching alerts:', 'color: #F44336; font-weight: bold', error);
       } finally {
         setLoading(false);
       }
@@ -74,7 +123,11 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
     fetchAlerts();
     // Refresh alerts every 5 minutes
     const interval = setInterval(fetchAlerts, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      console.log('%c Cleaning up interval', 'color: #9E9E9E; font-weight: bold');
+      console.groupEnd();
+      clearInterval(interval);
+    };
   }, [projectSites, onAlertsChange]);
 
   if (!projectSites.length) return null;
@@ -106,7 +159,7 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
 
   return (
     <Accordion type="single" collapsible className="w-full">
-      <AccordionItem value="alerts">
+      <AccordionItem value="weather-alerts">
         <AccordionTrigger className="hover:no-underline">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold">Weather Alerts</h3>
@@ -132,9 +185,15 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
               </Card>
             ) : (
               alerts.map((alert) => (
-                <Card key={alert.id} className="p-4">
+                <Card 
+                  key={`accordion-${alert.id}`}
+                  className="p-4"
+                >
                   <Accordion type="single" collapsible>
-                    <AccordionItem value="details" className="border-none">
+                    <AccordionItem 
+                      value={`details-${alert.id}`}
+                      className="border-none"
+                    >
                       <AccordionTrigger className="hover:no-underline p-0 justify-start">
                         <div className="flex items-start gap-2 w-full text-left">
                           {getSeverityIcon(alert.severity)}

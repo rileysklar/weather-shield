@@ -17,6 +17,23 @@ import { SiteType, ProjectSite } from '@/types/site';
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
+const PROJECT_TYPES = [
+  { value: 'solar_array', label: 'Solar Array' },
+  { value: 'wind_farm', label: 'Wind Farm' },
+  { value: 'hydroelectric', label: 'Hydroelectric' },
+  { value: 'coal', label: 'Coal' },
+  { value: 'natural_gas', label: 'Natural Gas' },
+  { value: 'nuclear', label: 'Nuclear' },
+  { value: 'geothermal', label: 'Geothermal' },
+  { value: 'biomass', label: 'Biomass' },
+  { value: 'other', label: 'Other' }
+];
+
+const getSiteTypeLabel = (type: string) => {
+  const projectType = PROJECT_TYPES.find(t => t.value === type);
+  return projectType?.label || type;
+};
+
 async function reverseGeocode(lng: number, lat: number) {
   const response = await fetch(
     `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxgl.accessToken}&types=place,region`
@@ -211,7 +228,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         const labelEl = document.createElement('div');
         labelEl.className = 'project-site-label bg-background/90 px-2 py-1 rounded-md shadow-md border border-border text-sm font-medium cursor-pointer hover:bg-accent/50 transition-colors';
         labelEl.style.zIndex = '1'; // Ensure labels are below sidebar
-        labelEl.textContent = site.name;
+        labelEl.textContent = `${site.name} (${getSiteTypeLabel(site.site_type)})`;
 
         // Add click handler
         labelEl.addEventListener('click', (e) => {
@@ -258,6 +275,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
       
       // Add polygon complete listener
       const handlePolygonCompleteEvent = (e: CustomEvent<number[][]>) => {
+        console.log('MapComponent - handlePolygonCompleteEvent - Raw event:', e);
         handlePolygonComplete(e.detail);
       };
 
@@ -318,6 +336,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
   };
 
   const handlePolygonComplete = (coordinates: number[][]) => {
+    console.log('MapComponent - handlePolygonComplete - Received coordinates:', coordinates);
     setCurrentPolygon(coordinates);
     setShowProjectForm(true);
     setIsSidebarOpen(true);
@@ -432,12 +451,10 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
   };
 
   const handleClearPolygon = () => {
+    console.log('MapComponent - handleClearPolygon - Cleaning up polygon');
     polygonService.current?.cleanup();
-    // Create a new instance for next use
     polygonService.current = new PolygonService();
-    setShowProjectForm(false);
     setCurrentPolygon(null);
-    setIsDrawingMode(false);
   };
 
   const handleCancelProjectSite = () => {
