@@ -40,11 +40,11 @@ export default function DocsLayout({
     <div className="relative min-h-screen">
       <div className="container flex-1 items-start md:grid md:grid-cols-[220px_1fr] md:gap-6 lg:grid-cols-[240px_1fr] lg:gap-10">
         {/* Mobile Accordion */}
-        <div className="block md:hidden my-6">
+        <div className="block md:hidden my-6 rounded-lg overflow-hidden">
           <Accordion type="single" collapsible className="w-full">
             {sidebarItems.map((section) => (
               <AccordionItem key={section.title} value={section.title} className="border-none p-2 bg-background">
-                <AccordionTrigger className="text-sm font-medium">
+                <AccordionTrigger className="text-sm font-medium p-2">
                   {section.title}
                 </AccordionTrigger>
                 <AccordionContent>
