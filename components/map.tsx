@@ -38,6 +38,10 @@ interface MapComponentProps {
   onProjectSiteCreate?: (site: ProjectSite) => void;
 }
 
+interface ProjectSiteUpdateInput extends Partial<ProjectSite> {
+  type?: SiteType;
+}
+
 export default function MapComponent({ onProjectSiteCreate }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -471,24 +475,33 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     }
   };
 
-  const handleProjectSiteUpdate = async (siteId: string, updates: Partial<ProjectSite>) => {
+  const handleProjectSiteUpdate = async (siteId: string, updates: ProjectSiteUpdateInput) => {
     try {
       // Format the updates to match database schema
-      const formattedUpdates = {
+      const formattedUpdates: Partial<ProjectSite> = {
         ...updates,
-        // If type is being updated, ensure it's a valid enum value
-        ...(updates.site_type && { site_type: updates.site_type as SiteType })
+        // If type is being updated, map it to site_type
+        ...(updates.type && { site_type: updates.type })
       };
 
       // Remove the type field as we're using site_type
-      if ('site_type' in formattedUpdates) {
-        delete formattedUpdates.site_type;
+      if ('type' in formattedUpdates) {
+        const { type, ...rest } = formattedUpdates as any;
+        await projectSiteService.current.updateProjectSite(siteId, rest);
+      } else {
+        await projectSiteService.current.updateProjectSite(siteId, formattedUpdates);
       }
 
-      await projectSiteService.current.updateProjectSite(siteId, formattedUpdates);
       setProjectSites(prevSites => 
-        prevSites.map(site => site.id === siteId ? { ...site, ...updates } : site)
+        prevSites.map(site => {
+          if (site.id === siteId) {
+            const { type, ...rest } = formattedUpdates as any;
+            return { ...site, ...rest };
+          }
+          return site;
+        })
       );
+
       toast({
         title: "Success",
         description: "Project site updated successfully"
