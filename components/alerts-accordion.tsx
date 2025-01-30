@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Bell, Info, MapPin } from 'lucide-react';
 import { NOAAService, ProcessedAlert } from '@/utils/services/noaa';
 import { ProjectSite } from '@/types/project-site';
+import { cn } from '@/lib/utils';
 
 interface AlertsAccordionProps {
   projectSites: ProjectSite[];
@@ -89,13 +90,18 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
   };
 
   const getSeverityColor = (severity: string) => {
-    if (severity.includes('Extreme') || severity.includes('Severe')) {
-      return 'text-destructive border-destructive bg-destructive/20';
+    switch (severity.toLowerCase()) {
+      case 'extreme':
+        return 'bg-red-500/20 text-red-600 border-red-600 hover:bg-red-500/30';
+      case 'severe':
+        return 'bg-orange-500/20 text-orange-600 border-orange-600 hover:bg-orange-500/30';
+      case 'moderate':
+        return 'bg-yellow-500/20 text-yellow-600 border-yellow-600 hover:bg-yellow-500/30';
+      case 'minor':
+        return 'bg-blue-500/20 text-blue-600 border-blue-600 hover:bg-blue-500/30';
+      default:
+        return 'bg-green-500/20 text-green-600 border-green-500 hover:bg-green-500/30';
     }
-    if (severity.includes('Moderate')) {
-      return 'text-warning border-warning bg-warning/20';
-    }
-    return 'text-muted-foreground border-muted bg-muted/20';
   };
 
   return (
@@ -137,7 +143,7 @@ export function AlertsAccordion({ projectSites, onAlertsChange }: AlertsAccordio
                               <h4 className="font-medium">{alert.event}</h4>
                               <Badge 
                                 variant="outline" 
-                                className={`text-xs shrink-0 rounded-md border-2 ${getSeverityColor(alert.severity)}`}
+                                className={cn("text-xs shrink-0 rounded-md border-2", getSeverityColor(alert.severity))}
                               >
                                 {alert.severity}
                               </Badge>

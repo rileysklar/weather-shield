@@ -321,6 +321,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     setCurrentPolygon(coordinates);
     setShowProjectForm(true);
     setIsSidebarOpen(true);
+    setIsDrawingMode(false); // Exit drawing mode
     
     toast({
       title: "Project Site Area Defined",

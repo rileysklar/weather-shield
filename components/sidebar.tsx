@@ -449,7 +449,15 @@ export function Sidebar({
                     <TabsContent value="create" className="mt-4">
                       {showProjectForm ? (
                         <div className="space-y-4">
-                          <ProjectSiteForm onSubmit={onProjectDetailsSubmit} />
+                          <ProjectSiteForm 
+                            onSubmit={async (details) => {
+                              await onProjectDetailsSubmit(details);
+                              // Reset drawing mode and close form
+                              if (onCancelProjectSite) {
+                                onCancelProjectSite();
+                              }
+                            }} 
+                          />
                           <Button 
                             variant="outline" 
                             className="w-full" 

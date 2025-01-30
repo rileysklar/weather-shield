@@ -90,28 +90,28 @@ export function RiskIndicator({ site, alerts, weatherData = null }: RiskIndicato
   const getRiskColor = () => {
     switch (risk.riskCategory) {
       case 'extreme':
-        return 'bg-destructive/20 text-destructive border-destructive hover:bg-destructive/20';
+        return 'bg-red-500/20 text-red-600 border-red-600 hover:bg-red-500/30 font-semibold';
       case 'severe':
-        return 'bg-destructive/20 text-destructive/80 border-destructive/50 hover:bg-destructive/30';
+        return 'bg-orange-500/20 text-orange-600 border-orange-600 hover:bg-orange-500/30 font-semibold';
       case 'high':
-        return 'bg-warning/10 text-warning border-warning hover:bg-warning/20';
+        return 'bg-amber-500/20 text-amber-600 border-amber-600 hover:bg-amber-500/30';
       case 'moderate':
-        return 'bg-warning/5 text-warning/80 border-warning/50 hover:bg-warning/10';
+        return 'bg-yellow-500/20 text-yellow-600 border-yellow-600 hover:bg-yellow-500/30';
       case 'minor':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500 hover:bg-blue-500/20';
+        return 'bg-blue-500/20 text-blue-600 border-blue-500 hover:bg-blue-500/30';
       default:
-        return 'bg-muted/50 text-muted-foreground border-muted hover:bg-muted';
+        return 'bg-green-500/20 text-green-600 border-green-500 hover:bg-green-500/30';
     }
   };
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
             variant="outline" 
             className={cn(
-              "text-xs shrink-0 gap-1 transition-colors rounded-md border-2",
+              "text-sm md:text-xs shrink-0 gap-1.5 transition-colors rounded-md border-2 py-1 px-2.5 cursor-pointer",
               getRiskColor()
             )}
           >
@@ -119,24 +119,28 @@ export function RiskIndicator({ site, alerts, weatherData = null }: RiskIndicato
             {risk.riskLevel}%
           </Badge>
         </TooltipTrigger>
-        <TooltipContent className="max-w-[300px]">
-          <div className="space-y-2">
-            <p className="font-semibold">Risk Assessment</p>
+        <TooltipContent 
+          side="top"
+          className="max-w-[90vw] md:max-w-[300px] p-3"
+          sideOffset={5}
+        >
+          <div className="space-y-2.5">
+            <p className="font-semibold text-base">Risk Assessment</p>
             <Badge 
               variant="secondary" 
-              className="text-xs rounded-md border-2 mt-1 mb-2"
+              className="text-sm md:text-xs rounded-md border-2 mt-1 mb-2 py-1"
             >
-              <MapPin className="h-3 w-3 mr-1" />
+              <MapPin className="h-3.5 w-3.5 md:h-3 md:w-3 mr-1.5" />
               {site.name}
             </Badge>
-            <div className="text-sm space-y-1">
+            <div className="text-base md:text-sm space-y-1.5">
               <p>Risk Level: {risk.riskCategory.charAt(0).toUpperCase() + risk.riskCategory.slice(1)}</p>
               {risk.primaryRiskFactors.length > 0 && (
                 <>
                   <p className="font-medium">Risk Factors:</p>
-                  <ul className="list-disc list-inside">
+                  <ul className="list-disc list-inside space-y-0.5">
                     {risk.primaryRiskFactors.map((factor, index) => (
-                      <li key={index}>{factor}</li>
+                      <li key={index} className="break-words">{factor}</li>
                     ))}
                   </ul>
                 </>
