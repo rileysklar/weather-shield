@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sheet";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
+import { LoadingBar } from "@/components/ui/loading-bar";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -51,9 +52,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <OnboardingProvider>
+            
             <div className="fixed inset-0 bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-90 bg-cover pointer-events-none" />
             <div className="relative min-h-screen flex flex-col">
-              <nav className="sticky top-0 z-40 w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
+              <nav className="sticky top-0 z-40 w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm relative">
+                <LoadingBar />
                 <div className="w-full flex justify-between items-center p-3 px-6 text-sm">
                   {/* Left section - Logo */}
                   <div className="flex items-center">

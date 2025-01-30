@@ -79,6 +79,24 @@ const config = {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-30px)' },
         },
+        "loading-bar": {
+          "0%": { 
+            width: "0%",
+            opacity: "0.2"
+          },
+          "50%": { 
+            width: "70%",
+            opacity: "0.1"
+          },
+          "90%": {
+            width: "90%",
+            opacity: "0.05"
+          },
+          "100%": { 
+            width: "100%",
+            opacity: "0"
+          }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -86,6 +104,7 @@ const config = {
         "float": "float 3s ease-in-out infinite",
         "float-slow": "float-slow 6s ease-in-out infinite",
         "float-slower": "float-slower 8s ease-in-out infinite",
+        "loading-bar": "loading-bar 0.2s ease-out"
       },
     },
   },
