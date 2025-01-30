@@ -81,6 +81,40 @@ NEXT_PUBLIC_WEATHER_API_KEY=your_weather_api_key
 DATABASE_URL=your_database_url
 ```
 
+## Deployment
+
+### Deploying to Vercel
+
+1. Push your code to a GitHub repository
+2. Visit [Vercel](https://vercel.com) and sign up/login with your GitHub account
+3. Click "Add New Project"
+4. Import your GitHub repository
+5. Configure the following environment variables in Vercel's dashboard:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   NEXT_PUBLIC_OPENWEATHER_API_KEY=your-openweather-api-key
+   NEXT_PUBLIC_MAPBOX_TOKEN=your-mapbox-token
+   AUTH_SECRET=your-auth-secret-key
+   ```
+6. Click "Deploy"
+
+Your application will be automatically built and deployed. Vercel will provide you with a production URL where your app is accessible.
+
+### Environment Variables Setup
+
+1. Development: Copy `.env.example` to `.env.local` and fill in your values
+2. Production: Add the same variables in your Vercel project settings
+3. Make sure to keep your `.env.local` file private and never commit it to the repository
+
+### Post-Deployment Checks
+
+1. Verify Supabase connection
+2. Test weather data fetching
+3. Confirm map functionality
+4. Check authentication flow
+5. Verify all API integrations
+
 ## Usage
 
 ### Creating a Project Site
