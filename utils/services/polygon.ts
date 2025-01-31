@@ -19,6 +19,9 @@ export class PolygonService {
   private map: mapboxgl.Map | null = null;
 
   initialize(map: mapboxgl.Map) {
+    // Clean up any existing draw instance first
+    this.cleanup();
+
     this.map = map;
     this.draw = new MapboxDraw({
       displayControlsDefault: false,
@@ -140,10 +143,22 @@ export class PolygonService {
 
   cleanup() {
     if (this.map && this.draw) {
+      // Remove all event listeners
       this.map.off('draw.create', this.handleDrawCreate);
       this.map.off('draw.delete', this.handleDrawDelete);
       this.map.off('draw.update', this.handleDrawUpdate);
+      
+      // Remove the control and clean up its sources
       this.map.removeControl(this.draw);
+      
+      // Remove any remaining draw sources
+      const sourceIds = ['mapbox-gl-draw-cold', 'mapbox-gl-draw-hot'];
+      sourceIds.forEach(id => {
+        if (this.map?.getSource(id)) {
+          this.map.removeSource(id);
+        }
+      });
+      
       this.draw = null;
       this.map = null;
     }

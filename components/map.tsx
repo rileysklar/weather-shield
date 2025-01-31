@@ -14,6 +14,13 @@ import { WeatherUpdateService } from '@/utils/services/weather-update';
 import { Json } from '@/types/supabase';
 import { SiteType, ProjectSite as DBProjectSite } from '@/types/site';
 import { ProjectSite, ProjectSiteUpdateInput } from '@/types/ui';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
@@ -360,16 +367,22 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
   }, [isDrawingMode]);
 
   const handleDrawingModeToggle = () => {
-    if (isDrawingMode) {
-      // If we're turning off drawing mode, clean up
-      polygonService.current?.cleanup();
-      setShowProjectForm(false);
-      setCurrentPolygon(null);
-    } else {
-      // If we're turning on drawing mode, create a new instance
-      polygonService.current = new PolygonService();
+    const newDrawingMode = !isDrawingMode;
+    setIsDrawingMode(newDrawingMode);
+    
+    // Close sidebar on mobile when entering draw mode
+    if (newDrawingMode && window.innerWidth < 640) {
+      setIsSidebarOpen(false);
     }
-    setIsDrawingMode(!isDrawingMode);
+    
+    if (newDrawingMode) {
+      polygonService.current = new PolygonService();
+      if (map.current) {
+        polygonService.current.initialize(map.current);
+      }
+    } else {
+      polygonService.current?.cleanup();
+    }
   };
 
   const handlePolygonComplete = (coordinates: number[][]) => {
@@ -388,7 +401,27 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
 
   const handleProjectSiteCreate = async (details: ProjectSiteDetails) => {
     try {
-      if (!currentPolygon || !user) return;
+      if (!currentPolygon || !user) {
+        toast({
+          title: "Error",
+          description: "Please sign in to create a project site.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verify user session is valid
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        toast({
+          title: "Session Expired",
+          description: "Please sign in again to continue.",
+          variant: "destructive"
+        });
+        // Redirect to sign in page
+        window.location.href = '/sign-in';
+        return;
+      }
 
       const [centerLng, centerLat] = calculatePolygonCenter(currentPolygon);
 
@@ -422,11 +455,11 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         title: "Success",
         description: "Project site created successfully.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating project site:', error);
       toast({
         title: "Error",
-        description: "Failed to create project site. Please try again.",
+        description: error.message || "Failed to create project site. Please try again.",
         variant: "destructive"
       });
     }
@@ -500,8 +533,8 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     setCurrentPolygon(null);
     
     toast({
-      title: "Project Site Creation Cancelled",
-      description: "You can start over by clicking 'Create Project Site'",
+      title: "Project Site Creation Complete",
+      description: "You can create again by clicking 'Create Project Site'",
     });
   };
 
@@ -573,6 +606,11 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
           type: 'FeatureCollection',
           features: []
         });
+      }
+
+      // Close the sidebar on mobile after deletion
+      if (window.innerWidth < 640) {
+        setIsSidebarOpen(false);
       }
       
       toast({

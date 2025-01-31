@@ -165,6 +165,14 @@ export function Sidebar({
   const [editingDescription, setEditingDescription] = useState('');
   const [editingType, setEditingType] = useState('');
   const [siteAlerts, setSiteAlerts] = useState<Record<string, ProcessedAlert[]>>({});
+  const [activeTab, setActiveTab] = useState('list');
+
+  // Update active tab when showProjectForm changes
+  useEffect(() => {
+    if (showProjectForm) {
+      setActiveTab('create');
+    }
+  }, [showProjectForm]);
 
   // Fetch alerts for each site
   useEffect(() => {
@@ -341,7 +349,7 @@ export function Sidebar({
               <ScrollArea className="flex-1">
                 <div className="space-y-4 pr-4">
                   {/* Project Sites Section */}
-                  <Tabs defaultValue="list" className="w-full">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="list">Sites ({projectSites.length})</TabsTrigger>
                       <TabsTrigger value="create">Create</TabsTrigger>
@@ -444,11 +452,12 @@ export function Sidebar({
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-6 w-6 p-0 hover:text-destructive"
+                                                    onClick={(e) => e.stopPropagation()}
                                                   >
                                                     <Trash2 className="h-3 w-3" />
                                                   </Button>
                                                 </AlertDialogTrigger>
-                                                <AlertDialogContent>
+                                                <AlertDialogContent className="sm:max-w-[425px]">
                                                   <AlertDialogHeader>
                                                     <AlertDialogTitle>Delete Project Site</AlertDialogTitle>
                                                     <AlertDialogDescription>
@@ -456,7 +465,7 @@ export function Sidebar({
                                                     </AlertDialogDescription>
                                                   </AlertDialogHeader>
                                                   <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
                                                     <AlertDialogAction
                                                       onClick={(e) => {
                                                         e.stopPropagation();
