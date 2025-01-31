@@ -9,8 +9,35 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Weather Shield",
-  description: "Protect Your Assets from Weather Risks",
+  title: "Weather Shield - Real-time Weather Monitoring & Risk Management",
+  description: "Protect your assets with Weather Shield's comprehensive weather monitoring, risk assessment, and real-time alerts for construction and outdoor projects.",
+  keywords: "weather monitoring, risk management, construction safety, weather alerts, site protection",
+  openGraph: {
+    title: "Weather Shield - Real-time Weather Monitoring & Risk Management",
+    description: "Protect your assets with Weather Shield's comprehensive weather monitoring, risk assessment, and real-time alerts for construction and outdoor projects.",
+    url: defaultUrl,
+    siteName: "Weather Shield",
+    images: [
+      {
+        url: `${defaultUrl}/og-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "Weather Shield Dashboard Preview",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Weather Shield - Real-time Weather Monitoring & Risk Management",
+    description: "Protect your assets with Weather Shield's comprehensive weather monitoring, risk assessment, and real-time alerts for construction and outdoor projects.",
+    images: [`${defaultUrl}/og-image.jpg`],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const geistSans = Geist({
