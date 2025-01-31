@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Thermometer, Wind, Droplets, Sun, CloudRain, Cloud, ArrowLeft, PanelLeftClose, PanelLeft, Moon, Pencil, X, Download, Upload, Check, Trash2 } from "lucide-react";
+import { Thermometer, Wind, Droplets, Sun, CloudRain, Cloud, ArrowLeft, PanelLeftClose, PanelLeft, Moon, Pencil, X, Download, Upload, Check, Trash2, Icon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -28,6 +28,7 @@ import { WeatherUpdateService } from '@/utils/services/weather-update';
 import { DashboardSiteData } from '@/utils/services/dashboard';
 import { WeatherData, WeatherPeriod } from '@/types/weather';
 import { isPointInPolygon } from '@/utils/geo';
+import { Logo } from './logo';
 
 interface SidebarWeatherData {
   [siteId: string]: {
@@ -314,7 +315,7 @@ export function Sidebar({
                   {location ? (
                     <CardTitle>{location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}</CardTitle>
                   ) : (
-                    <CardDescription>Select a US location on the map</CardDescription>
+                    <Logo />
                   )}
                 </div>
                 <div className="flex items-center gap-2">

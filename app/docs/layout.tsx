@@ -4,7 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FileText, Home, Book, Cloud, Shield, ChevronDown } from "lucide-react";
+import { FileText, Home, Book, Map, Shield, ChevronDown } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -39,10 +39,59 @@ export default function DocsLayout({
   return (
     <div className="container mx-auto py-8">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[250px_1fr]">
-        <aside className="hidden md:block">
-          {/* Sidebar content can be added here */}
+        <aside className=" md:block">
+          <nav className="sticky top-20 space-y-6">
+            <div className="flex items-center space-x-2">
+              <Book className="h-6 w-6" />
+              <h2 className="text-lg font-semibold">Documentation</h2>
+            </div>
+            <Accordion type="single" collapsible defaultValue="Getting Started" className="space-y-2">
+              {sidebarItems.map((section) => (
+                <AccordionItem key={section.title} value={section.title} className="border-none">
+                  <AccordionTrigger className="py-2 hover:no-underline">
+                    <span className="text-sm font-semibold">{section.title}</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-2">
+                    <div className="flex flex-col space-y-1">
+                      {section.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={cn(
+                            "text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md px-3 py-2 transition-colors",
+                          )}
+                        >
+                          {item.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <div className="space-y-2">
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/home" className="flex items-center space-x-2">
+                  <Home className="h-4 w-4" />
+                  <span>Back to Home</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/protected" className="flex items-center space-x-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/protected/map" className="flex items-center space-x-2">
+                  <Map className="h-4 w-4" />
+                  <span>Map</span>
+                </Link>
+              </Button>
+            </div>
+          </nav>
         </aside>
-        <main>{children}</main>
+        <main className="prose dark:prose-invert max-w-none">{children}</main>
       </div>
     </div>
   );
