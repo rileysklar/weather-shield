@@ -26,5 +26,9 @@ export default async function ProtectedLayout({
     redirect('/sign-in');
   }
 
-  return <>{children}</>;
+  return (
+    <div className="h-[calc(100vh-4rem)] bg-[url('/topo-light.svg')] dark:bg-[url('/topo-dark.svg')] bg-contain bg-center bg-no-repeat">
+      {children}
+    </div>
+  );
 } 
