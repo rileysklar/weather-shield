@@ -1,15 +1,19 @@
-import Map from "@/components/map";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+'use client';
 
-// Force dynamic rendering to prevent static build errors
-export const dynamic = 'force-dynamic';
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import Map from '@/components/map';
 
 export default function MapPage() {
   return (
     <div className="relative h-[calc(100svh-64px)] w-screen overflow-hidden">
-      <Map />
+      <Suspense fallback={
+        <div className="relative h-[calc(100svh-64px)] w-screen overflow-hidden">
+          <Skeleton className="h-full w-full" />
+        </div>
+      }>
+        <Map />
+      </Suspense>
     </div>
   );
 } 
