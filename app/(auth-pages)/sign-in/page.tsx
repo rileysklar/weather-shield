@@ -7,6 +7,50 @@ import Link from "next/link";
 import { Icons } from "@/components/icons";
 import { Testimonial } from "@/components/testimonial";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
+import { Suspense } from "react";
+
+function SignInForm({ searchParams }: { searchParams: Message }) {
+  return (
+    <form className="grid gap-4">
+      <div className="grid gap-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          type="email"
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect="off"
+          required
+        />
+      </div>
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          <Link
+            href="/forgot-password"
+            className="text-sm font-medium text-primary hover:text-primary/90"
+          >
+            Forgot password?
+          </Link>
+        </div>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          required
+        />
+      </div>
+      <SubmitButton formAction={signInAction} className="w-full" pendingText="Signing in...">
+        Sign in
+      </SubmitButton>
+      <FormMessage message={searchParams} />
+    </form>
+  );
+}
 
 export default async function Login(props: { searchParams: Promise<Message> }) {
   const searchParams = await props.searchParams;
@@ -22,44 +66,9 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
           </p>
         </div>
         <div className="grid gap-6 mt-6">
-          <form className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                placeholder="you@example.com"
-                type="email"
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect="off"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium text-primary hover:text-primary/90"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-              />
-            </div>
-            <SubmitButton formAction={signInAction} className="w-full" pendingText="Signing in...">
-              Sign in
-            </SubmitButton>
-            <FormMessage message={searchParams} />
-          </form>
+          <Suspense fallback={<div>Loading...</div>}>
+            <SignInForm searchParams={searchParams} />
+          </Suspense>
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Don't have an account?{" "}

@@ -1,7 +1,6 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/client-layout";
-import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { ThemeProvider } from "next-themes";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -34,11 +33,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <OnboardingProvider>
             <ClientLayout>
               {children}
             </ClientLayout>
-          </OnboardingProvider>
         </ThemeProvider>
       </body>
     </html>

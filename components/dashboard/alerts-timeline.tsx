@@ -29,7 +29,7 @@ export function AlertsTimeline({ sites }: AlertsTimelineProps) {
   // Process alerts when sites change
   useEffect(() => {
     const processedAlerts = sites.flatMap(site => 
-      site.currentWeather?.alerts?.map(alert => ({
+      site.currentWeather?.alerts?.map((alert: any) => ({
         ...alert,
         siteName: site.name
       })) || []

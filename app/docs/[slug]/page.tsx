@@ -3,24 +3,28 @@ import { notFound } from "next/navigation";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
-import fs from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
 
-interface PageProps {
-  params: {
-    slug: string;
-  };
+export async function generateStaticParams() {
+  const docsPath = path.join(process.cwd(), 'content', 'docs');
+  const files = await fs.readdir(docsPath);
+  return files
+    .filter(file => file.endsWith('.md'))
+    .map(file => ({
+      slug: file.replace(/\.md$/, ''),
+    }));
 }
 
-export default async function DocPage({ params }: PageProps) {
-  const { slug } = params;
-  const filePath = path.join(process.cwd(), 'content', 'docs', `${slug}.md`);
+const DocPage = async (props: any) => {
+  const filePath = path.join(process.cwd(), 'content', 'docs', `${props.params.slug}.md`);
   
   let content: string;
   try {
-    content = fs.readFileSync(filePath, 'utf8');
+    content = await fs.readFile(filePath, 'utf8');
   } catch (error) {
-    notFound();
+    console.error('Error reading markdown file:', error);
+    return notFound();
   }
 
   return (
@@ -70,4 +74,6 @@ export default async function DocPage({ params }: PageProps) {
       </CardContent>
     </Card>
   );
-} 
+}
+
+export default DocPage; 

@@ -1,5 +1,4 @@
-import { ProjectSiteService } from './project-site';
-import { WeatherData } from '@/types/weather';
+import { ProjectSiteService, WeatherData } from './project-site';
 import { WeatherUpdateService } from './weather-update';
 import { SiteType } from '@/types/site';
 
@@ -90,7 +89,7 @@ export class DashboardService {
 
       // If the latest data is more than 15 minutes old, trigger a background update
       const latestData = history[history.length - 1];
-      if (latestData && new Date().getTime() - new Date(latestData.timestamp).getTime() > 15 * 60 * 1000) {
+      if (latestData?.timestamp && new Date().getTime() - new Date(latestData.timestamp).getTime() > 15 * 60 * 1000) {
         const site = await this.projectSiteService.getProjectSite(siteId);
         if (site) {
           this.weatherUpdateService.updateWeatherForSite(site).catch(console.error);

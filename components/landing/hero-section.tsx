@@ -141,7 +141,7 @@ export function HeroSection() {
             
             {/* Snow Icon - Top Left */}
             <div 
-              className="absolute left-16 top-12 transition-transform duration-[1500ms] ease-out"
+              className="absolute left-16 top-12 transition-transform duration-1000 ease-out"
               style={{ 
                 transform: calculateTransform(0, 0, 0.5),
                 willChange: 'transform'
@@ -155,7 +155,7 @@ export function HeroSection() {
 
             {/* Rain Icon - Bottom Right */}
             <div 
-              className="absolute right-16 bottom-20 transition-transform duration-[1200ms] ease-out"
+              className="absolute right-16 bottom-20 transition-transform duration-1000 ease-out"
               style={{ 
                 transform: calculateTransform(0, 0, 0.35),
                 willChange: 'transform'
@@ -169,7 +169,7 @@ export function HeroSection() {
 
             {/* Irregular Polygon - Center Left */}
             <div 
-              className="absolute  top-2/4 -translate-y-1/2 transition-transform duration-[1600ms] ease-out"
+              className="absolute  top-2/4 -translate-y-1/2 transition-transform duration-1000 ease-out"
               style={{ 
                 transform: calculateTransform(0, 0, 0.25),
                 willChange: 'transform'
@@ -183,7 +183,7 @@ export function HeroSection() {
 
             {/* Hail Icon - Center Right */}
             <div 
-              className="absolute right-6 top-1/2 -translate-y-1/2 transition-transform duration-[1300ms] ease-out"
+              className="absolute right-6 top-1/2 -translate-y-1/2 transition-transform duration-1000 ease-out"
               style={{ 
                 transform: calculateTransform(0, -20, 0.45),
                 willChange: 'transform'

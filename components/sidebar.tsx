@@ -26,7 +26,8 @@ import { NOAAService, ProcessedAlert } from '@/utils/services/noaa';
 import { WeatherService } from '@/utils/services/weather';
 import { WeatherUpdateService } from '@/utils/services/weather-update';
 import { DashboardSiteData } from '@/utils/services/dashboard';
-import { WeatherData } from '@/types/weather';
+import { WeatherData, WeatherPeriod } from '@/types/weather';
+import { isPointInPolygon } from '@/utils/geo';
 
 interface SidebarWeatherData {
   [siteId: string]: {
@@ -251,6 +252,40 @@ export function Sidebar({
     }
     
     setEditingSiteId(null);
+  };
+
+  const handleAlertsChange = (alerts: ProcessedAlert[]) => {
+    const alertsMap: Record<string, ProcessedAlert[]> = {};
+    projectSites.forEach(site => {
+      if (site.coordinates) {
+        // Filter alerts based on whether their areas contain the site's location
+        alertsMap[site.id] = alerts.filter(alert => {
+          const centerLat = site.coordinates.reduce((sum, coord) => sum + coord[1], 0) / site.coordinates.length;
+          const centerLng = site.coordinates.reduce((sum, coord) => sum + coord[0], 0) / site.coordinates.length;
+          
+          return alert.areas.some(area => {
+            const locations = area
+              .split(/[,;]/)
+              .map(loc => loc.trim().toLowerCase())
+              .filter(loc => loc.length > 0);
+            
+            const siteName = site.name?.toLowerCase() || '';
+            const siteDesc = site.description?.toLowerCase() || '';
+            
+            return locations.some(location => 
+              siteName.includes(location) || 
+              location.includes(siteName) ||
+              siteDesc.includes(location) ||
+              location.includes(centerLat.toFixed(2)) || 
+              location.includes(centerLng.toFixed(2))
+            );
+          });
+        });
+      } else {
+        alertsMap[site.id] = [];
+      }
+    });
+    setSiteAlerts(alertsMap);
   };
 
   return (
@@ -502,92 +537,27 @@ export function Sidebar({
                   {/* Weather Alerts Section */}
                   <AlertsAccordion 
                     projectSites={projectSites} 
-                    onAlertsChange={setSiteAlerts}
+                    onAlertsChange={handleAlertsChange}
                   />
 
                   {/* Weather Conditions Section */}
-                  {weatherData && (
-                    <>
-                      {loading ? (
-                        <LoadingSkeleton />
-                      ) : (
-                        <Accordion type="single" collapsible className="w-full">
-                          <AccordionItem value="conditions">
-                            <AccordionTrigger className="hover:no-underline">
-                              <div className="flex flex-col items-start gap-1 flex-1">
-                                {location?.projectSiteId && (
-                                  <h3 className="text-lg font-semibold">
-                                    {projectSites.find(site => site.id === location.projectSiteId)?.name}
-                                  </h3>
-                                )}
-                                <p className="text-md text-muted-foreground">
-                                  {location?.name || `${location?.lat.toFixed(4)}, ${location?.lng.toFixed(4)}`}
-                                </p>
-                                <p className="text-xs text-muted-foreground">Current Conditions</p>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-4 pt-2">
-                                {/* Current Conditions */}
-                                <div className="grid grid-cols-2 gap-3">
-                                  <Card className="bg-card hover:bg-accent/40 transition-colors">
-                                    <CardHeader className="p-3">
-                                      <div className="flex flex-col">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <Thermometer className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-xs font-medium text-muted-foreground">TEMPERATURE</span>
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                          <span className="text-2xl font-bold">{weatherData.forecast[0].temperature}</span>
-                                          <span className="text-sm font-medium text-muted-foreground">°{weatherData.forecast[0].temperatureUnit}</span>
-                                        </div>
-                                      </div>
-                                    </CardHeader>
-                                  </Card>
-                                  <Card className="bg-card hover:bg-accent/40 transition-colors">
-                                    <CardHeader className="p-3">
-                                      <div className="flex flex-col">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <Wind className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-xs font-medium text-muted-foreground">WIND SPEED</span>
-                                        </div>
-                                        <div className="flex items-baseline gap-1">
-                                          <span className="text-2xl font-bold">{weatherData.forecast[0].windSpeed.replace(' mph', '')}</span>
-                                          <span className="text-sm font-medium text-muted-foreground">MPH</span>
-                                        </div>
-                                      </div>
-                                    </CardHeader>
-                                  </Card>
-                                </div>
-
-                                {/* Temperature Chart */}
-                                <Card className="p-4">
-                                  <TemperatureChart forecast={weatherData.forecast} />
-                                </Card>
-
-                                {/* Forecast Periods */}
-                                <div className="space-y-2">
-                                  {weatherData.forecast.map((period) => (
-                                    <Card key={period.number} className="p-4">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                          {getWeatherIcon(period.shortForecast)}
-                                          <div>
-                                            <p className="font-medium">{period.name}</p>
-                                            <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
-                                          </div>
-                                        </div>
-                                        <p className="font-medium">{period.temperature}°{period.temperatureUnit}</p>
-                                      </div>
-                                    </Card>
-                                  ))}
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      )}
-                    </>
+                  {location?.projectSiteId && 
+                    weatherData?.[location.projectSiteId]?.currentWeather && 
+                    weatherData[location.projectSiteId]?.currentWeather?.forecast_periods && (
+                    <div className="space-y-4">
+                      {weatherData[location.projectSiteId]?.currentWeather?.forecast_periods?.map((period: WeatherPeriod) => (
+                        <Card key={period.number} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {getWeatherIcon(period.shortForecast)}
+                              <span className="font-medium">{period.name}</span>
+                            </div>
+                            <span>{period.temperature}°{period.temperatureUnit}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-2">{period.shortForecast}</p>
+                        </Card>
+                      ))}
+                    </div>
                   )}
                 </div>
               </ScrollArea>

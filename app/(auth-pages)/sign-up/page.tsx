@@ -7,12 +7,9 @@ import Link from "next/link";
 import { Icons } from "@/components/icons";
 import { Testimonial } from "@/components/testimonial";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
+import { Suspense } from "react";
 
-export default async function Signup(props: {
-  searchParams: Promise<Message>;
-}) {
-  const searchParams = await props.searchParams;
-  
+function SignUpForm({ searchParams }: { searchParams: Message }) {
   if ("message" in searchParams) {
     return (
       <div className="flex items-center justify-center">
@@ -20,6 +17,46 @@ export default async function Signup(props: {
       </div>
     );
   }
+
+  return (
+    <form className="grid gap-4">
+      <div className="grid gap-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          type="email"
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect="off"
+          required
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="Create a password"
+          autoComplete="new-password"
+          minLength={6}
+          required
+        />
+      </div>
+      <SubmitButton formAction={signUpAction} className="w-full" pendingText="Creating account...">
+        Create account
+      </SubmitButton>
+      <FormMessage message={searchParams} />
+    </form>
+  );
+}
+
+export default async function Signup(props: {
+  searchParams: Promise<Message>;
+}) {
+  const searchParams = await props.searchParams;
 
   return (
     <div className="flex flex-col space-y-6">
@@ -32,37 +69,9 @@ export default async function Signup(props: {
           </p>
         </div>
         <div className="grid gap-6 mt-6">
-          <form className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                placeholder="you@example.com"
-                type="email"
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect="off"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Create a password"
-                autoComplete="new-password"
-                minLength={6}
-                required
-              />
-            </div>
-            <SubmitButton formAction={signUpAction} className="w-full" pendingText="Creating account...">
-              Create account
-            </SubmitButton>
-            <FormMessage message={searchParams} />
-          </form>
+          <Suspense fallback={<div>Loading...</div>}>
+            <SignUpForm searchParams={searchParams} />
+          </Suspense>
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}

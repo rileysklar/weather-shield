@@ -11,7 +11,7 @@ interface WeatherHistoryProps {
 
 export function WeatherHistory({ data, title = "Weather History" }: WeatherHistoryProps) {
   const chartData = data.map(weather => ({
-    time: new Date(weather.timestamp).toLocaleDateString(),
+    time: weather.timestamp ? new Date(weather.timestamp).toLocaleDateString() : 'No Date',
     temperature: weather.temperature,
     windSpeed: weather.wind_speed
   }));

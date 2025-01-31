@@ -12,7 +12,8 @@ import { useUser } from '@/lib/hooks/use-user';
 import { toast } from "@/components/ui/use-toast";
 import { WeatherUpdateService } from '@/utils/services/weather-update';
 import { Json } from '@/types/supabase';
-import { SiteType, ProjectSite } from '@/types/site';
+import { SiteType, ProjectSite as DBProjectSite } from '@/types/site';
+import { ProjectSite, ProjectSiteUpdateInput } from '@/types/ui';
 
 // Initialize with your Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
@@ -52,12 +53,45 @@ async function reverseGeocode(lng: number, lat: number) {
 }
 
 interface MapComponentProps {
-  onProjectSiteCreate?: (site: ProjectSite) => void;
+  onProjectSiteCreate?: (site: DBProjectSite) => void;
 }
 
-interface ProjectSiteUpdateInput extends Partial<ProjectSite> {
-  type?: SiteType;
-}
+// Add type guard for coordinates
+const isValidCoordinates = (coords: unknown): coords is number[][] => {
+  return Array.isArray(coords) && 
+    coords.every(point => Array.isArray(point) && 
+    point.every(num => typeof num === 'number'));
+};
+
+// Convert DB site to UI site, with type assertion for coordinates
+const toUIProjectSite = (dbSite: DBProjectSite): ProjectSite | null => {
+  const coordinates = dbSite.coordinates;
+  
+  // Skip sites with invalid coordinates
+  if (!isValidCoordinates(coordinates)) {
+    console.error('Invalid coordinates format:', coordinates);
+    return null;
+  }
+
+  return {
+    id: dbSite.id,
+    name: dbSite.name,
+    description: dbSite.description || '',
+    type: dbSite.site_type,
+    coordinates
+  };
+};
+
+const toDBProjectSite = (uiSite: Partial<ProjectSite>): Partial<DBProjectSite> => {
+  const dbSite: Partial<DBProjectSite> = {};
+  
+  if (uiSite.name !== undefined) dbSite.name = uiSite.name;
+  if (uiSite.description !== undefined) dbSite.description = uiSite.description;
+  if (uiSite.type !== undefined) dbSite.site_type = uiSite.type as SiteType;
+  if (uiSite.coordinates !== undefined) dbSite.coordinates = uiSite.coordinates;
+  
+  return dbSite;
+};
 
 export default function MapComponent({ onProjectSiteCreate }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -214,7 +248,6 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     function updatePolygons() {
       // Remove existing project site labels
       document.querySelectorAll('.project-site-label').forEach(el => {
-        // Only remove if it's a direct label element, not a marker wrapper
         if (!el.closest('.mapboxgl-marker')) {
           el.closest('.mapboxgl-marker')?.remove();
         }
@@ -222,17 +255,19 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
 
       // Add labels for each project site
       projectSites.forEach(site => {
+        if (!site.coordinates) return; // Skip sites without coordinates
+        
         const center = calculatePolygonCenter(site.coordinates);
         
         // Create label element
         const labelEl = document.createElement('div');
         labelEl.className = 'project-site-label bg-background/90 px-2 py-1 rounded-md shadow-md border border-border text-sm font-medium cursor-pointer hover:bg-accent/50 transition-colors';
-        labelEl.style.zIndex = '1'; // Ensure labels are below sidebar
-        labelEl.textContent = `${site.name} (${getSiteTypeLabel(site.site_type)})`;
+        labelEl.style.zIndex = '1';
+        labelEl.textContent = `${site.name} (${getSiteTypeLabel(site.type)})`;
 
         // Add click handler
         labelEl.addEventListener('click', (e) => {
-          e.stopPropagation(); // Prevent map click
+          e.stopPropagation();
           handleProjectSiteSelect(site);
         });
 
@@ -248,18 +283,20 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
       // Update polygons on the map
       const geojson = {
         type: 'FeatureCollection',
-        features: projectSites.map(site => ({
-          type: 'Feature',
-          properties: {
-            id: site.id,
-            name: site.name,
-            type: site.site_type
-          },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [site.coordinates]
-          }
-        }))
+        features: projectSites
+          .filter(site => site.coordinates !== null)
+          .map(site => ({
+            type: 'Feature',
+            properties: {
+              id: site.id,
+              name: site.name,
+              type: site.type
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [site.coordinates!]
+            }
+          }))
       };
 
       (map.current?.getSource('saved-polygons') as mapboxgl.GeoJSONSource)?.setData(geojson as any);
@@ -364,23 +401,10 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         user_id: user.id
       });
 
-      const siteWithCorrectTypes: ProjectSite = {
-        ...newSite,
-        coordinates: currentPolygon,
-        site_type: details.type,
-        center_point: newSite.center_point || null,
-        created_at: newSite.created_at || null,
-        updated_at: newSite.updated_at || null
-      };
-
-      // Add to local state
-      setProjectSites(prev => [...prev, siteWithCorrectTypes]);
-
-      // Trigger initial weather update for the new site
-      const weatherUpdateService = new WeatherUpdateService();
-      weatherUpdateService.updateWeatherForSite(siteWithCorrectTypes).catch(error => {
-        console.error('Error updating weather for new site:', error);
-      });
+      const uiSite = toUIProjectSite(newSite);
+      if (uiSite) {
+        setProjectSites(prev => [...prev, uiSite]);
+      }
 
       // Reset all states
       setShowProjectForm(false);
@@ -388,7 +412,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
       polygonService.current?.clearPolygon();
 
       // Notify parent
-      onProjectSiteCreate?.(siteWithCorrectTypes);
+      onProjectSiteCreate?.(newSite);
 
       toast({
         title: "Success",
@@ -411,12 +435,16 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     const loadProjectSites = async () => {
       try {
         const sites = await projectSiteService.current.getProjectSites();
-        setProjectSites(sites);
+        // Convert DB sites to UI sites, filtering out invalid ones
+        const validSites = sites
+          .map(site => toUIProjectSite(site))
+          .filter((site): site is ProjectSite => site !== null);
+        setProjectSites(validSites);
       } catch (error) {
         console.error('Error loading project sites:', error);
         toast({
-          title: "Error",
-          description: "Failed to load project sites",
+          title: "Error loading project sites",
+          description: "Please try again later",
           variant: "destructive",
         });
       }
@@ -425,8 +453,8 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
     loadProjectSites();
   }, [user]);
 
-  const handleProjectSiteSelect = async (site: typeof projectSites[0]) => {
-    if (!map.current) return;
+  const handleProjectSiteSelect = async (site: ProjectSite) => {
+    if (!map.current || !site.coordinates) return;
     
     // Open sidebar when project site is selected
     setIsSidebarOpen(true);
@@ -495,41 +523,28 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
 
   const handleProjectSiteUpdate = async (siteId: string, updates: ProjectSiteUpdateInput) => {
     try {
-      // Format the updates to match database schema
-      const formattedUpdates: Partial<ProjectSite> = {
-        ...updates,
-        // If type is being updated, map it to site_type
-        ...(updates.type && { site_type: updates.type })
-      };
-
-      // Remove the type field as we're using site_type
-      if ('type' in formattedUpdates) {
-        const { type, ...rest } = formattedUpdates as any;
-        await projectSiteService.current.updateProjectSite(siteId, rest);
-      } else {
-        await projectSiteService.current.updateProjectSite(siteId, formattedUpdates);
-      }
-
-      setProjectSites(prevSites => 
+      // Convert UI updates to DB updates
+      const dbUpdates = toDBProjectSite(updates);
+      await projectSiteService.current.updateProjectSite(siteId, dbUpdates);
+      
+      // Update local state with UI types
+      setProjectSites(prevSites =>
         prevSites.map(site => {
           if (site.id === siteId) {
-            const { type, ...rest } = formattedUpdates as any;
-            return { ...site, ...rest };
+            return {
+              ...site,
+              ...updates
+            };
           }
           return site;
         })
       );
-
-      toast({
-        title: "Success",
-        description: "Project site updated successfully"
-      });
     } catch (error) {
       console.error('Error updating project site:', error);
       toast({
-        title: "Error",
-        description: "Failed to update project site",
-        variant: "destructive"
+        title: "Error updating project site",
+        description: "Please try again later",
+        variant: "destructive",
       });
     }
   };

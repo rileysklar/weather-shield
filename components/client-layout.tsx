@@ -13,7 +13,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import HeaderAuth from "@/components/header-auth";
@@ -150,7 +149,6 @@ export default function ClientLayout({
       <div className="relative flex-1">
         {children}
       </div>
-      <OnboardingFlow />
       <Toaster />
     </div>
   );

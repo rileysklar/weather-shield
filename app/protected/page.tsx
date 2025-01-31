@@ -16,19 +16,25 @@ import { WeatherHistory } from '@/components/dashboard/weather-history';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
 import { useWeatherHistory } from '@/hooks/use-weather-history';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function ProtectedPage() {
+  const router = useRouter();
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const { sites, isLoading: loadingSites, isError, mutate: refreshDashboard } = useDashboardData();
   const { history, isLoading: loadingHistory } = useWeatherHistory(selectedSiteId);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Add effect to refresh on mount
+  useEffect(() => {
+    if (isError) {
+      router.push('/sign-in');
+    }
+  }, [isError, router]);
+
   useEffect(() => {
     refreshDashboard();
   }, [refreshDashboard]);
 
-  // Add keyboard shortcut for search
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
@@ -43,9 +49,37 @@ export default function ProtectedPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await refreshDashboard();
-    setIsRefreshing(false);
+    try {
+      await refreshDashboard();
+    } catch (error) {
+      console.error('Error refreshing dashboard:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
+
+  if (loadingSites) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-6 w-3/4" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -84,36 +118,10 @@ export default function ProtectedPage() {
           {/* Main Content */}
           <div className="min-w-0 space-y-6">
             {/* Sites Overview */}
-            {loadingSites ? (
-              <Card className="p-6">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...Array(6)].map((_, i) => (
-                      <Card key={i} className="p-4">
-                        <div className="space-y-3">
-                          <Skeleton className="h-6 w-3/4" />
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Skeleton className="h-4 w-4 rounded-full" />
-                              <Skeleton className="h-4 w-24" />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Skeleton className="h-4 w-4 rounded-full" />
-                              <Skeleton className="h-4 w-32" />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            ) : (
-              <SitesOverview
-                sites={sites}
-                onSiteSelect={(siteId) => setSelectedSiteId(siteId)}
-              />
-            )}
+            <SitesOverview
+              sites={sites || []}
+              onSiteSelect={(siteId) => setSelectedSiteId(siteId)}
+            />
 
             {/* Weather History */}
             {selectedSiteId && (
@@ -130,13 +138,13 @@ export default function ProtectedPage() {
               ) : (
                 <WeatherHistory
                   data={history}
-                  title={`Weather History - ${sites.find(s => s.id === selectedSiteId)?.name}`}
+                  title={`Weather History - ${sites?.find(s => s.id === selectedSiteId)?.name}`}
                 />
               )
             )}
 
             {/* Risk Assessment */}
-            {!loadingSites && <RiskAssessment sites={sites} />}
+            {!loadingSites && sites && <RiskAssessment sites={sites} />}
           </div>
         </div>
       </SiteFilterProvider>

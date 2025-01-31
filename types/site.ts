@@ -1,6 +1,6 @@
 import { Json } from './supabase';
 
-export type SiteType = 
+export type SiteType =
   | 'solar_array'
   | 'wind_farm'
   | 'hydroelectric'
@@ -15,8 +15,8 @@ export interface ProjectSite {
   id: string;
   name: string;
   description: string | null;
+  coordinates: any;
   site_type: SiteType;
-  coordinates: number[][];
   center_point: unknown;
   created_at: string | null;
   updated_at: string | null;

@@ -1,13 +1,15 @@
 import { createClient } from '@/lib/supabase/client';
 import { Database } from '@/lib/supabase/database.types';
+import { ProjectSite } from '@/types/site';
+import { SiteType } from '@/types/site';
 
-export type ProjectSite = Database['public']['Tables']['project_sites']['Row'];
+export type { ProjectSite };
 export type ProjectSiteInsert = Database['public']['Tables']['project_sites']['Insert'];
 
 export interface WeatherData {
   id: string;
   project_site_id: string;
-  timestamp: string;
+  timestamp: string | null;
   temperature: number | null;
   feels_like: number | null;
   humidity: number | null;
@@ -20,34 +22,59 @@ export interface WeatherData {
   weather_description: string | null;
   forecast_periods: any | null;
   alerts: any | null;
-  has_active_alerts: boolean;
+  has_active_alerts: boolean | null;
   highest_alert_severity: 'minor' | 'moderate' | 'severe' | 'extreme' | null;
-  data_source: 'openweather' | 'weathergov';
+  data_source: string;
   raw_response: any;
 }
 
+// Type guard for coordinates
+const isValidCoordinates = (coords: unknown): coords is number[][] => {
+  return Array.isArray(coords) && 
+    coords.every(point => Array.isArray(point) && 
+    point.every(num => typeof num === 'number'));
+};
+
 export class ProjectSiteService {
   private supabase = createClient();
-
-  async createProjectSite(data: Omit<ProjectSite, 'id' | 'created_at' | 'updated_at'>) {
-    const { data: site, error } = await this.supabase
-      .from('project_sites')
-      .insert([data])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return site;
+  private static instance: ProjectSiteService;
+  
+  static get current(): ProjectSiteService {
+    if (!ProjectSiteService.instance) {
+      ProjectSiteService.instance = new ProjectSiteService();
+    }
+    return ProjectSiteService.instance;
   }
 
-  async getProjectSites() {
+  async getProjectSites(): Promise<ProjectSite[]> {
     const { data: sites, error } = await this.supabase
       .from('project_sites')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return sites;
+    if (!sites) return [];
+
+    return sites.map(site => ({
+      ...site,
+      coordinates: isValidCoordinates(site.coordinates) ? site.coordinates : []
+    }));
+  }
+
+  async createProjectSite(site: Omit<ProjectSite, 'id' | 'created_at' | 'updated_at'>): Promise<ProjectSite> {
+    const { data, error } = await this.supabase
+      .from('project_sites')
+      .insert([site])
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('No data returned from insert');
+
+    return {
+      ...data,
+      coordinates: isValidCoordinates(data.coordinates) ? data.coordinates : []
+    };
   }
 
   async getProjectSite(id: string): Promise<ProjectSite | null> {
@@ -61,19 +88,16 @@ export class ProjectSiteService {
     return site;
   }
 
-  async updateProjectSite(id: string, updates: Partial<Omit<ProjectSite, 'id' | 'created_at' | 'updated_at'>>) {
-    const { data: site, error } = await this.supabase
+  async updateProjectSite(id: string, updates: Partial<ProjectSite>): Promise<void> {
+    const { error } = await this.supabase
       .from('project_sites')
       .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
 
     if (error) throw error;
-    return site;
   }
 
-  async deleteProjectSite(id: string) {
+  async deleteProjectSite(id: string): Promise<void> {
     const { error } = await this.supabase
       .from('project_sites')
       .delete()

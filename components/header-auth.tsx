@@ -6,8 +6,9 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { signOutAction } from '@/app/actions';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function HeaderAuth() {
+function HeaderAuthContent() {
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -82,5 +83,18 @@ export default function HeaderAuth() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function HeaderAuth() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center gap-4">
+        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+        <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+      </div>
+    }>
+      <HeaderAuthContent />
+    </Suspense>
   );
 }
