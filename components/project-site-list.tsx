@@ -78,8 +78,19 @@ export function ProjectSiteList({ sites, onSelect, onEdit, onDelete }: ProjectSi
 
   if (!sites.length) {
     return (
-      <Card className="p-4">
-        <p className="text-sm text-muted-foreground">No project sites created yet</p>
+      <Card className="p-6">
+        <div className="space-y-3">
+        <h2 className="text-md">No project sites created yet</h2>
+          <img src="/og-image.jpg" alt="No project sites created yet" className="sm:w-1/2 w-full rounded-lg overflow-hidden h-auto" />
+          <p className="text-md text-muted-foreground">To create your first site:</p>
+          <ol className="text-sm text-muted-foreground list-decimal pl-4 space-y-1">
+            <li>Navigate to the Map view</li>
+            <li>Click the sidebar toggle in the top left</li>
+            <li>Click "Create" in the sidebar</li>
+            <li>Draw a polygon around your project site</li>
+            <li>Fill in your site details</li>
+          </ol>
+        </div>
       </Card>
     );
   }

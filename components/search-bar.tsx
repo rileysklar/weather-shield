@@ -118,9 +118,16 @@ export function SearchBar({ onLocationSelect }: SearchBarProps) {
                   key={result.name}
                   value={result.name}
                   onSelect={() => handleSelect(result)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(result);
+                  }}
+                  className="cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground"
                 >
-                  <Search className="mr-2 h-4 w-4" />
-                  {result.name}
+                  <div className="flex items-center w-full">
+                    <Search className="mr-2 h-4 w-4" />
+                    <span>{result.name}</span>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>

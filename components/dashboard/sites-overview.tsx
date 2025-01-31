@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { SiteWeatherCard } from './site-weather-card';
 import { WeatherHistory } from './weather-history';
 import { DashboardSiteData } from '@/utils/services/dashboard';
@@ -50,10 +51,21 @@ interface SitesOverviewProps {
 }
 
 export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
+  const router = useRouter();
   const [selectedSite, setSelectedSite] = useState<DashboardSiteData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [sitesPerPage, setSitesPerPage] = useState(9);
   const { filteredSites } = useSiteFilter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   // Calculate total alerts and highest severity from filtered sites
   const totalAlerts = filteredSites.reduce((sum, site) => sum + site.alerts.count, 0);
@@ -117,130 +129,147 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
 
   return (
     <div className="space-y-8">
-      <Tabs defaultValue="all" className="space-y-4">
-        <div className="overflow-auto pb-2 -mb-2">
-          <TabsList className="inline-flex sm:flex-wrap justify-start">
-            <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
-              All Sites ({filteredSites.length})
-            </TabsTrigger>
-            {SEVERITY_LEVELS.map(({ value, label }) => (
-              <TabsTrigger 
-                key={value} 
-                value={value}
-                className="text-xs sm:text-sm whitespace-nowrap"
-              >
-                {label} ({sitesByRisk[value]?.length || 0})
+      {!filteredSites?.length ? (
+        <Card className="p-6">
+          <div className="space-y-3">
+            <h2 className="text-md inline-block bg-destructive/30  border border-destructive px-2.5 py-1.5 rounded-lg">No project sites created yet</h2>
+            <img src="/og-image.jpg" alt="No project sites created yet" className="sm:w-1/2 w-full rounded-lg overflow-hidden h-auto" />
+            <p className="text-md text-muted-foreground">To create your first project site:</p>
+            <ol className="text-sm text-muted-foreground list-decimal pl-4 space-y-1">
+              <li>Navigate to the Map view</li>
+              <li>Click the sidebar toggle in the top left</li>
+              <li>Click "Create" in the sidebar</li>
+              <li>Draw a polygon around your project site</li>
+              <li>Fill in your site details</li>
+            </ol>
+          </div>
+        </Card>
+      ) : (
+        <Tabs defaultValue="all" className="space-y-4">
+          <div className="overflow-auto pb-2 -mb-2">
+            <TabsList className="inline-flex sm:flex-wrap justify-start">
+              <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
+                All Sites ({filteredSites.length})
               </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {currentSites.map(site => (
-              <SiteWeatherCard
-                key={site.id}
-                site={site}
-                isSelected={selectedSite?.id === site.id}
-                onClick={() => handleSiteClick(site)}
-              />
-            ))}
-          </div>
-          
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredSites.length)} of {filteredSites.length}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePageChange(page)}
+              {SEVERITY_LEVELS.map(({ value, label }) => (
+                <TabsTrigger 
+                  key={value} 
+                  value={value}
+                  className="text-xs sm:text-sm whitespace-nowrap"
                 >
-                  {page}
-                </Button>
+                  {label} ({sitesByRisk[value]?.length || 0})
+                </TabsTrigger>
               ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            </TabsList>
           </div>
-        </TabsContent>
 
-        {SEVERITY_LEVELS.map(({ value, label }) => {
-          const sites = sitesByRisk[value] || [];
-          const riskSites = sites.slice(startIndex, endIndex);
-          const riskTotalPages = Math.ceil(sites.length / sitesPerPage);
-          
-          return (
-            <TabsContent key={value} value={value} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {riskSites.map(site => (
-                  <SiteWeatherCard
-                    key={site.id}
-                    site={site}
-                    isSelected={selectedSite?.id === site.id}
-                    onClick={() => handleSiteClick(site)}
-                  />
-                ))}
+          <TabsContent value="all" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {currentSites.map(site => (
+                <SiteWeatherCard
+                  key={site.id}
+                  site={site}
+                  isSelected={selectedSite?.id === site.id}
+                  onClick={() => handleSiteClick(site)}
+                />
+              ))}
+            </div>
+            
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredSites.length)} of {filteredSites.length}
               </div>
-              
-              {/* Pagination Controls for Risk Tabs */}
-              {sites.length > 0 && (
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {startIndex + 1}-{Math.min(endIndex, sites.length)} of {sites.length}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    {Array.from({ length: riskTotalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === riskTotalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {SEVERITY_LEVELS.map(({ value, label }) => {
+            const sites = sitesByRisk[value] || [];
+            const riskSites = sites.slice(startIndex, endIndex);
+            const riskTotalPages = Math.ceil(sites.length / sitesPerPage);
+            
+            return (
+              <TabsContent key={value} value={value} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {riskSites.map(site => (
+                    <SiteWeatherCard
+                      key={site.id}
+                      site={site}
+                      isSelected={selectedSite?.id === site.id}
+                      onClick={() => handleSiteClick(site)}
+                    />
+                  ))}
                 </div>
-              )}
-            </TabsContent>
-          );
-        })}
-      </Tabs>
+                
+                {/* Pagination Controls for Risk Tabs */}
+                {sites.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {startIndex + 1}-{Math.min(endIndex, sites.length)} of {sites.length}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      {Array.from({ length: riskTotalPages }, (_, i) => i + 1).map((page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === riskTotalPages}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      )}
 
       {/* Selected Site Details */}
       {selectedSite && (

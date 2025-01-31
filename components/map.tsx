@@ -410,19 +410,7 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         return;
       }
 
-      // Verify user session is valid
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        toast({
-          title: "Session Expired",
-          description: "Please sign in again to continue.",
-          variant: "destructive"
-        });
-        // Redirect to sign in page
-        window.location.href = '/sign-in';
-        return;
-      }
-
+      // Use the current user's ID directly since we already checked it exists
       const [centerLng, centerLat] = calculatePolygonCenter(currentPolygon);
 
       const newSite = await projectSiteService.current.createProjectSite({
