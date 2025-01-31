@@ -3,8 +3,8 @@ import "./globals.css";
 import ClientLayout from "@/components/client-layout";
 import { ThemeProvider } from "next-themes";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
+const defaultUrl = process.env.NODE_ENV === "production"
+  ? "https://weather-shield.vercel.app"
   : "http://localhost:3000";
 
 export const metadata = {
@@ -19,11 +19,17 @@ export const metadata = {
     siteName: "Weather Shield",
     images: [
       {
-        url: `${defaultUrl}/og-image.jpg`,
+        url: new URL('/og-image.jpg', defaultUrl).toString(),
         width: 1200,
         height: 630,
         alt: "Weather Shield Dashboard Preview",
       },
+      {
+        url: new URL('/og-image.jpg', defaultUrl).toString(),
+        width: 1080,
+        height: 1080,
+        alt: "Weather Shield Dashboard Preview",
+      }
     ],
     locale: "en_US",
     type: "website",
@@ -32,7 +38,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Weather Shield - Real-time Weather Monitoring & Risk Management",
     description: "Protect your assets with Weather Shield's comprehensive weather monitoring, risk assessment, and real-time alerts for construction and outdoor projects.",
-    images: [`${defaultUrl}/og-image.jpg`],
+    images: [new URL('/og-image.jpg', defaultUrl).toString()],
   },
   robots: {
     index: true,
