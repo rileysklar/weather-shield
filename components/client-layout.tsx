@@ -24,22 +24,35 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
+    if (!hasEnvVars) return;
+
+    const supabase = createClient();
+    
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+      } catch (error) {
+        console.warn('Error checking session:', error);
+        setIsAuthenticated(false);
+      }
     };
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-    });
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(!!session);
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.warn('Error setting up auth state change listener:', error);
+      return () => {};
+    }
   }, []);
 
   return (
