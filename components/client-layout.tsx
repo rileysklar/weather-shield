@@ -56,8 +56,8 @@ export default function ClientLayout({
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-200 via-gray-50/10 to-gray-200 dark:from-gray-900 dark:via-slate-800/20 dark:to-slate-900">
-      <div className="absolute inset-0 bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-90 bg-repeat" />
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-200 via-gray-50/10 dark:from-slate-900 dark:via-slate-900">
+      <div className="fixed inset-0 w-full h-full bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-90 bg-repeat" />
       
       <nav className="relative w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
         <div className="w-full flex justify-between items-center p-3 px-6 text-sm">
@@ -159,9 +159,9 @@ export default function ClientLayout({
         </div>
       </nav>
 
-      <div className="relative flex-1">
+      <main className="relative flex-1">
         {children}
-      </div>
+      </main>
       <Toaster />
     </div>
   );

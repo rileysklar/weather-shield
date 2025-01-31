@@ -306,19 +306,21 @@ export class WeatherService {
    */
   static async getWeatherData(lat: number, lon: number) {
     try {
+      console.log('Getting weather data for coordinates:', { lat, lon });
       // First, get the point data
       const pointData = await this.getPoint(lat, lon);
+      console.log('Point data received:', pointData);
       
       // Then get the forecast
       const forecast = await this.getForecast(pointData.properties.forecast, lat, lon);
+      console.log('Forecast data received:', forecast);
 
       if (!forecast?.properties?.periods) {
         console.error('Invalid forecast data:', forecast);
         throw new Error('Invalid forecast data received');
       }
 
-      // Return simplified data structure
-      return {
+      const result = {
         forecast: forecast.properties.periods,
         location: {
           gridId: pointData.properties.gridId,
@@ -326,13 +328,16 @@ export class WeatherService {
           gridY: pointData.properties.gridY
         }
       };
+      console.log('Final weather data:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching complete weather data:', error);
       // If using OpenWeather fallback, ensure we have the API key
       if (error instanceof Error && error.message.includes('OpenWeather')) {
-        const apiKey = process.env.OPENWEATHER_API_KEY;
+        const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || process.env.OPENWEATHER_API_KEY;
         if (!apiKey) {
-          throw new Error('OpenWeather API key not configured');
+          console.error('OpenWeather API key not configured');
+          throw new Error('Weather service configuration error: OpenWeather API key not found');
         }
       }
       throw error;

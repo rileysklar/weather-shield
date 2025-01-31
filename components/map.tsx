@@ -401,6 +401,10 @@ export default function MapComponent({ onProjectSiteCreate }: MapComponentProps)
         user_id: user.id
       });
 
+      // Fetch weather data immediately after site creation
+      const weatherUpdateService = new WeatherUpdateService();
+      await weatherUpdateService.updateWeatherForSite(newSite);
+
       const uiSite = toUIProjectSite(newSite);
       if (uiSite) {
         setProjectSites(prev => [...prev, uiSite]);

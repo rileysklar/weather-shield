@@ -10,7 +10,7 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata = {
   metadataBase: new URL(defaultUrl),
   title: "Weather Shield",
-  description: "Your personal weather companion",
+  description: "Protect Your Assets from Weather Risks",
 };
 
 const geistSans = Geist({

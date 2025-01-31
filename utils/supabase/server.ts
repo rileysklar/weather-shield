@@ -12,6 +12,12 @@ export async function createClient() {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     {
+      global: {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      },
       cookies: {
         async get(name: string) {
           return (await cookies()).get(name)?.value
