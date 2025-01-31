@@ -1,18 +1,25 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Map, LayoutDashboard, LogOut, Home, HelpCircle } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { createClient } from "@/utils/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/sign-in');
+  };
 
   return (
-    <div className="flex items-center justify-between p-4 border-b">
+    <div className="sticky top-0 z-50 bg-background flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-6">
         <Link href="/protected" className="font-semibold text-lg">
           Weather Shield
@@ -51,12 +58,11 @@ export function DashboardNav() {
         </nav>
       </div>
       <div className="flex items-center gap-2">
-      
         <Button
           variant="ghost"
           size="sm"
+          onClick={handleSignOut}
           className="gap-2"
-          onClick={() => signOut()}
         >
           <LogOut className="h-4 w-4" />
           Sign Out

@@ -59,7 +59,7 @@ export default function ClientLayout({
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-200 via-gray-50/10 dark:from-slate-900 dark:via-slate-900">
       <div className="fixed inset-0 w-full h-full bg-[url('/topo-dark.svg')] opacity-30 dark:opacity-90 bg-repeat" />
       
-      <nav className="relative w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
+      <nav className="sticky top-0 z-50 w-full flex justify-center border-b border-b-foreground/10 bg-transparent h-16 glass backdrop-blur-sm">
         <div className="w-full flex justify-between items-center p-3 px-6 text-sm">
           <div className="flex gap-5 items-center font-semibold roboto">
             <Link href="/home" className="text-xl black-ops flex flex-row gap-2">
