@@ -5,7 +5,7 @@ import { WeatherData } from '@/types/weather';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Map, RefreshCw } from 'lucide-react';
+import { Map, RefreshCw, Home, Shield } from 'lucide-react';
 import { RiskAssessment } from '@/components/dashboard/risk-assessment';
 import { SiteFilterProvider } from '@/contexts/site-filter-context';
 import { SiteFilters } from '@/components/dashboard/site-filters';
@@ -114,6 +114,26 @@ export default function ProtectedPage() {
           <div className="relative mb-6 lg:mb-0">
             <div className="lg:h-[calc(100vh-12rem)] sticky top-[5rem] overflow-y-auto">
               <SiteFilters />
+              <div className="space-y-2 mt-4">
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/home" className="flex items-center space-x-2 bg-background">
+                  <Home className="h-4 w-4" />
+                  <span>Back to Home</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/protected" className="flex items-center space-x-2 bg-background">
+                  <Shield className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/protected/map" className="flex items-center space-x-2 bg-background">
+                  <Map className="h-4 w-4" />
+                  <span>Map</span>
+                </Link>
+              </Button>
+            </div>
             </div>
           </div>
 
