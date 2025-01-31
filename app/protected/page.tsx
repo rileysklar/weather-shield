@@ -18,6 +18,8 @@ import { useWeatherHistory } from '@/hooks/use-weather-history';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default function ProtectedPage() {
   const router = useRouter();
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
