@@ -2,7 +2,7 @@ Weather Shield is a sophisticated web application that helps organizations monit
 
 Core Features
 
-Interactive Map Interface
+✅ Interactive Map Interface
 - Dynamic Map Navigation: Pan, zoom, and explore project sites across the United States
 - Site Visualization:
   - Project sites displayed with custom polygons
@@ -10,7 +10,7 @@ Interactive Map Interface
   - Site names and current weather conditions always visible
   - Active weather alerts displayed with severity indicators
 
-Project Site Management
+✅ Project Site Management
 - Site Types Support:
   - Solar Arrays (1.2x weather sensitivity)
   - Wind Farms (1.3x weather sensitivity)
@@ -31,7 +31,7 @@ Project Site Management
   - Remove sites with confirmation
   - Automatic cleanup of associated weather data
 
-Weather Monitoring
+✅ Weather Monitoring
 - Real-time Weather Data:
   - Temperature readings (current and feels like)
   - Wind speed and direction measurements
@@ -47,7 +47,7 @@ Weather Monitoring
   - Average and maximum wind speeds
   - Site-wide weather trends
 
-Risk Assessment
+✅ Risk Assessment
 - Comprehensive Risk Analysis:
   - Five-level risk categorization (Minor, Moderate, High, Severe, Extreme)
   - Customized risk thresholds:
@@ -68,7 +68,7 @@ Risk Assessment
   - Historical risk trends
   - Site type-specific risk multipliers
 
-Alert Management
+✅ Alert Management
 - Alert Processing:
   - Real-time NOAA alert integration
   - Geographical alert matching
@@ -85,7 +85,7 @@ Alert Management
   - Highest severity tracking
   - Alert duration monitoring
 
-Dashboard Interface
+✅ Dashboard Interface
 - Site Overview:
   - Paginated site listings
   - Grouping by risk level
@@ -104,7 +104,7 @@ Dashboard Interface
   - Optimized data fetching
   - Smooth loading transitions
 
-Technical Implementation
+✅ Technical Implementation
 - Built with Next.js and React
 - TypeScript for type safety
 - Tailwind CSS for styling
@@ -113,3 +113,15 @@ Technical Implementation
 - Error handling and fallbacks
 - Multiple weather data source support
 - Geographical coordinate processing
+
+🚧 To Do:
+1. Fix search bar click handling in map view
+2. Add loading states for weather data fetching
+3. Improve empty state UX with better skeleton loading
+4. Add error boundaries for failed weather data fetches
+5. Implement better mobile responsiveness for map controls
+6. Add tooltips for risk indicators
+7. Implement data caching for better performance
+8. Add export functionality for weather data
+9. Implement batch operations for site management
+10. Add site comparison feature

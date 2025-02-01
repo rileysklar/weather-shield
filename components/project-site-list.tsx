@@ -82,7 +82,7 @@ export function ProjectSiteList({ sites, onSelect, onEdit, onDelete }: ProjectSi
         <div className="space-y-3">
         <h2 className="text-md">No project sites created yet</h2>
           <img src="/og-image.jpg" alt="No project sites created yet" className="sm:w-1/2 w-full rounded-lg overflow-hidden h-auto" />
-          <p className="text-md text-muted-foreground">To create your first site:</p>
+          <p className="text-md text-muted-foreground">To ccccc your first site:</p>
           <ol className="text-sm text-muted-foreground list-decimal pl-4 space-y-1">
             <li>Navigate to the Map view</li>
             <li>Click the sidebar toggle in the top left</li>

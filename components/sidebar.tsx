@@ -165,7 +165,7 @@ export function Sidebar({
   const [editingDescription, setEditingDescription] = useState('');
   const [editingType, setEditingType] = useState('');
   const [siteAlerts, setSiteAlerts] = useState<Record<string, ProcessedAlert[]>>({});
-  const [activeTab, setActiveTab] = useState('list');
+  const [activeTab, setActiveTab] = useState('create');
   const [deletingSiteId, setDeletingSiteId] = useState<string | null>(null);
 
   // Update active tab when showProjectForm changes
@@ -316,7 +316,9 @@ export function Sidebar({
                 onClick={onToggle}
                 className="h-8 w-8 p-0 hover:bg-accent"
               >
-                <PanelLeft className="h-4 w-4" />
+                <div className="p-2 border border-blue-500 animate-pulse rounded-md">
+                  <PanelLeft className="h-4 w-4 text-blue-500 animate-pulse rounded-md" />
+                </div>
               </Button>
             ) : (
               <div className="flex flex-col space-y-4">
@@ -325,7 +327,10 @@ export function Sidebar({
                     {location ? (
                       <CardTitle>{location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}</CardTitle>
                     ) : (
-                      <Logo />
+                      <>
+                      <h2 className="text-lg font-semibold">Project Sites</h2>
+                      <p className="text-sm text-muted-foreground balance">Click the map or create your project site</p>
+                      </>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -336,7 +341,9 @@ export function Sidebar({
                       onClick={onToggle}
                       className="h-8 w-8 p-0 hover:bg-accent"
                     >
-                      <PanelLeftClose className="h-4 w-4" />
+                      <div className="p-2 border border-blue-500 animate-pulse rounded-md">
+                       <PanelLeft className="h-4 w-4 text-blue-500 animate-pulse rounded-md" />
+                      </div>
                     </Button>
                   </div>
                 </div>
@@ -354,7 +361,7 @@ export function Sidebar({
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="list">Sites ({projectSites.length})</TabsTrigger>
-                        <TabsTrigger value="create">Create</TabsTrigger>
+                        <TabsTrigger value="create" className="">Create</TabsTrigger>
                       </TabsList>
                       <TabsContent value="list" className="mt-4">
                         <Accordion type="single" collapsible>

@@ -10,13 +10,13 @@ Get started with Weather Shield in just a few minutes. This guide will walk you 
 
 ## Step 2: Add Your First Project Site
 
-1. Navigate to the dashboard
-2. Click "Add New Site"
-3. Enter the site details:
+1. Navigate to the map
+2. Open the sidebar on the top left
+3. Click "Add New Site"
+4. Enter the site details:
    - Site name
    - Location (address or coordinates)
    - Project type
-   - Risk thresholds
 
 ## Step 3: Configure Weather Alerts
 

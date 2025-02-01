@@ -12,7 +12,7 @@ import { useSiteFilter } from '@/contexts/site-filter-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
+import { Skeleton } from '@/components/ui/skeleton';
 const PROJECT_TYPES = [
   { value: 'solar_array', label: 'Solar Array' },
   { value: 'wind_farm', label: 'Wind Farm' },
@@ -130,20 +130,35 @@ export function SitesOverview({ sites, onSiteSelect }: SitesOverviewProps) {
   return (
     <div className="space-y-8">
       {!filteredSites?.length ? (
-        <Card className="p-6">
-          <div className="space-y-3">
-            <h2 className="text-md inline-block bg-destructive/30  border border-destructive px-2.5 py-1.5 rounded-lg">No project sites created yet</h2>
-            <img src="/og-image.jpg" alt="No project sites created yet" className="sm:w-1/2 w-full rounded-lg overflow-hidden h-auto" />
-            <p className="text-md text-muted-foreground">To create your first project site:</p>
-            <ol className="text-sm text-muted-foreground list-decimal pl-4 space-y-1">
-              <li>Navigate to the Map view</li>
-              <li>Click the sidebar toggle in the top left</li>
-              <li>Click "Create" in the sidebar</li>
-              <li>Draw a polygon around your project site</li>
-              <li>Fill in your site details</li>
-            </ol>
+        <div className="relative w-full">
+          <div className="grid grid-cols-2 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-20 w-full" />
+                    <div className="flex justify-between">
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-        </Card>
+          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+            <Button 
+              variant="default" 
+              size="lg" 
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => router.push('/protected/map')}
+            >
+              Create your first Project Site
+            </Button>
+          </div>
+        </div>
       ) : (
         <Tabs defaultValue="all" className="space-y-4">
           <div className="overflow-auto pb-2 -mb-2">
